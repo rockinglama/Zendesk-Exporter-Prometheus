@@ -5,23 +5,86 @@ A Prometheus exporter for Zendesk Support metrics, providing comprehensive monit
 ## Features
 
 - **Dual Authentication Support**: OAuth Bearer tokens or API token authentication
-- **Comprehensive Metrics**: Ticket counts, SLA achievement, response times, and more
-- **Production Ready**: Built-in rate limiting, error handling, and health monitoring
+- **Comprehensive Metrics**: 29+ metrics covering efficiency, capacity, channels, SLA, and operations
+- **GDPR Compliant**: No PII in metrics - only aggregated counts and numeric IDs
+- **Production Ready**: Built-in rate limiting, error handling, and graceful degradation
 - **Docker Support**: Full containerization with Prometheus and Grafana
 - **Mock Mode**: Test without real Zendesk API access
 
 ## Metrics Exposed
+
+### Core Ticket Metrics
 
 | Metric Name | Type | Description | Labels |
 |------------|------|-------------|---------|
 | `zendesk_tickets_total` | Gauge | Current ticket counts by status | `status` |
 | `zendesk_unsolved_tickets_total` | Gauge | Total number of unsolved tickets | - |
 | `zendesk_tickets_created` | Gauge | Number of tickets created in time period | `period` |
+| `zendesk_tickets_by_group` | Gauge | Number of tickets by group | `group` |
+
+### Efficiency & Quality Metrics
+
+| Metric Name | Type | Description | Labels |
+|------------|------|-------------|---------|
+| `zendesk_reopened_tickets_total` | Gauge | Tickets reopened in the last 30 days | - |
+| `zendesk_reopened_tickets_rate` | Gauge | Percentage of solved tickets that were reopened (0-100) | - |
+| `zendesk_one_touch_resolution_rate` | Gauge | Percentage of tickets solved with single reply (0-100) | - |
+| `zendesk_replies_per_ticket_avg` | Gauge | Average replies until resolution (last 30d) | - |
+| `zendesk_requester_wait_time_seconds` | Gauge | Average total requester wait time in seconds | - |
+
+### Capacity & Workload Metrics
+
+| Metric Name | Type | Description | Labels |
+|------------|------|-------------|---------|
+| `zendesk_backlog_age_tickets` | Gauge | Open ticket age distribution | `bucket` |
+| `zendesk_tickets_per_assignee` | Gauge | Tickets per agent (ID only, GDPR compliant) | `assignee_id` |
+| `zendesk_unassigned_tickets_total` | Gauge | Tickets with no assignee | - |
+| `zendesk_assignment_rate` | Gauge | Percentage of open tickets that are assigned (0-100) | - |
+
+### Channels & Trends Metrics
+
+| Metric Name | Type | Description | Labels |
+|------------|------|-------------|---------|
+| `zendesk_tickets_by_channel` | Gauge | Ticket distribution by channel | `channel` |
+| `zendesk_tickets_by_priority` | Gauge | Ticket distribution by priority | `priority` |
+| `zendesk_tickets_by_tag` | Gauge | Top 10 ticket tags by count | `tag` |
+| `zendesk_satisfaction_score_rate` | Gauge | Aggregated CSAT good/(good+bad) ratio (0-100) | - |
+| `zendesk_satisfaction_good_total` | Gauge | Total good satisfaction ratings | - |
+| `zendesk_satisfaction_bad_total` | Gauge | Total bad satisfaction ratings | - |
+
+### SLA & Performance Metrics
+
+| Metric Name | Type | Description | Labels |
+|------------|------|-------------|---------|
 | `zendesk_sla_achievement_rate` | Gauge | SLA achievement rate percentage by channel | `channel` |
 | `zendesk_first_reply_time_seconds` | Gauge | Average first reply time in seconds | - |
 | `zendesk_full_resolution_time_seconds` | Gauge | Average full resolution time in seconds | - |
-| `zendesk_tickets_by_group` | Gauge | Number of tickets by group | `group` |
+| `zendesk_sla_breach_count` | Gauge | Current SLA breaches by metric type | `metric` |
+| `zendesk_sla_breach_rate_by_priority` | Gauge | SLA breach rate by priority (0-100) | `priority` |
+
+### Operational Metrics
+
+| Metric Name | Type | Description | Labels |
+|------------|------|-------------|---------|
+| `zendesk_suspended_tickets_total` | Gauge | Tickets in suspended/spam queue | - |
+| `zendesk_automations_count` | Gauge | Number of active automations | - |
+| `zendesk_triggers_count` | Gauge | Number of active triggers | - |
+| `zendesk_macros_count` | Gauge | Number of active macros | - |
+
+### System Metrics
+
+| Metric Name | Type | Description | Labels |
+|------------|------|-------------|---------|
 | `zendesk_exporter_info` | Gauge | Information about the exporter | `version`, `mode` |
+
+### Privacy & GDPR Compliance
+
+**🔒 This exporter is GDPR compliant:**
+
+- **No Personal Data**: Never caches or exposes names, emails, or ticket content
+- **Agent Privacy**: Metrics use only numeric IDs (`assignee_id`), never agent names
+- **Aggregated CSAT**: Satisfaction metrics are aggregated ratios only, never per-ticket
+- **Counts Only**: All metrics are aggregated counts and averages, no individual records
 
 ## Authentication
 
@@ -156,22 +219,35 @@ Returns basic application information and configuration.
 The exporter uses the following Zendesk REST API v2 endpoints:
 
 - `/api/v2/search/count.json` - Ticket counts and filtering
-- `/api/v2/ticket_metrics.json` - Response time metrics
+- `/api/v2/search.json` - Ticket data for aggregations (limited samples)
+- `/api/v2/ticket_metrics.json` - Response time and efficiency metrics
+- `/api/v2/satisfaction_ratings.json` - Customer satisfaction data (aggregated only)
 - `/api/v2/groups.json` - Support group information
+- `/api/v2/automations.json` - Active automation counts
+- `/api/v2/triggers.json` - Active trigger counts  
+- `/api/v2/macros.json` - Active macro counts
+- `/api/v2/suspended_tickets/count.json` - Suspended ticket queue size
+- `/api/v2/slas/policies.json` - SLA policy information
 
 **Rate Limiting**: The exporter implements intelligent rate limiting with:
-- 200 requests per minute maximum
-- Automatic retry with exponential backoff
+- 200 requests per minute maximum (300ms between requests)
+- Automatic retry with exponential backoff for 429 responses
 - Respect for `Retry-After` headers
+- Promise.allSettled for resilient parallel data collection
+- Graceful degradation on API failures
 
 ## Grafana Dashboard
 
 The included Grafana dashboard provides:
 
-- **SLA Achievement Overview**: Achievement rates by channel
-- **Ticket Volume Metrics**: Current counts and trends
-- **Response Time Analysis**: First reply and resolution times
-- **Group Performance**: Tickets distribution across support groups
+- **📊 Overview**: SLA achievement rates and ticket status distribution
+- **⏱️ Performance**: Response times and key performance indicators
+- **🎯 Efficiency & Quality**: Reopened rates, one-touch resolution, customer wait times
+- **⚖️ Capacity & Workload**: Backlog age distribution, assignee workload, assignment rates
+- **📊 Channels & Trends**: Distribution by channel, priority, tags, and CSAT scores
+- **🎯 SLA Detail**: Breach counts and rates by priority level
+- **⚙️ Operational**: Suspended tickets, automation counts, system health
+- **📈 Trends & Volume**: Historical ticket creation and group performance
 
 Import the dashboard from `grafana/dashboards/zendesk-kpis.json` or use the automatic provisioning in Docker.
 

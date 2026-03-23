@@ -89,6 +89,160 @@ class MockZendeskClient {
     await new Promise(resolve => setTimeout(resolve, delay));
   }
 
+  /**
+   * Mock efficiency and quality metrics with realistic variance
+   * @returns {Promise<Object>} Mock efficiency metrics
+   */
+  async getEfficiencyMetrics() {
+    await this.mockDelay();
+    
+    const baseReopened = 15;
+    const baseSolved = 450;
+    const reopenedTotal = this.addVariance(baseReopened, 0.4);
+    const solvedTotal = this.addVariance(baseSolved, 0.1);
+    const reopenedRate = Math.min(100, (reopenedTotal / solvedTotal) * 100);
+    
+    return {
+      reopenedTotal,
+      reopenedRate: this.addVariance(reopenedRate, 0.2),
+      oneTouchRate: this.addVariance(72, 0.15), // 72% one-touch resolution
+      avgReplies: this.addVariance(2.8, 0.2), // Average 2.8 replies per ticket
+      avgRequesterWait: this.addVariance(7200, 0.3), // 2 hours average wait
+    };
+  }
+
+  /**
+   * Mock capacity and workload metrics with realistic distribution
+   * @returns {Promise<Object>} Mock capacity metrics
+   */
+  async getCapacityMetrics() {
+    await this.mockDelay();
+    
+    const totalBacklog = this.addVariance(320, 0.2);
+    
+    // Realistic age distribution (more recent tickets)
+    const distribution = {
+      lt_1d: 0.35,
+      '1d_3d': 0.25,
+      '3d_7d': 0.20,
+      '7d_30d': 0.15,
+      'gt_30d': 0.05,
+    };
+    
+    const backlogAge = {};
+    Object.entries(distribution).forEach(([bucket, ratio]) => {
+      backlogAge[bucket] = this.addVariance(Math.floor(totalBacklog * ratio), 0.3);
+    });
+    
+    const unassignedTotal = this.addVariance(25, 0.6);
+    const totalOpen = Object.values(backlogAge).reduce((sum, count) => sum + count, 0);
+    const assignmentRate = Math.min(100, ((totalOpen - unassignedTotal) / totalOpen) * 100);
+    
+    // Mock assignee distribution (use numeric IDs only)
+    const assigneeIds = ['101', '102', '103', '104', '105', '106'];
+    const ticketsPerAssignee = {};
+    assigneeIds.forEach(id => {
+      ticketsPerAssignee[id] = this.addVariance(35, 0.4);
+    });
+    
+    return {
+      backlogAge,
+      ticketsPerAssignee,
+      unassignedTotal,
+      assignmentRate: this.addVariance(assignmentRate, 0.1),
+    };
+  }
+
+  /**
+   * Mock channel and trend metrics with realistic patterns
+   * @returns {Promise<Object>} Mock channel metrics
+   */
+  async getChannelMetrics() {
+    await this.mockDelay();
+    
+    // Realistic channel distribution
+    const ticketsByChannel = {
+      email: this.addVariance(850, 0.15),
+      chat: this.addVariance(320, 0.25),
+      phone: this.addVariance(180, 0.3),
+      web: this.addVariance(120, 0.4),
+      api: this.addVariance(50, 0.6),
+    };
+    
+    // Realistic priority distribution  
+    const ticketsByPriority = {
+      low: this.addVariance(380, 0.2),
+      normal: this.addVariance(920, 0.15),
+      high: this.addVariance(160, 0.3),
+      urgent: this.addVariance(40, 0.5),
+    };
+    
+    // Mock top tags
+    const commonTags = {
+      'billing': this.addVariance(125, 0.3),
+      'technical': this.addVariance(98, 0.4),
+      'account': this.addVariance(87, 0.3),
+      'bug': this.addVariance(76, 0.5),
+      'feature_request': this.addVariance(65, 0.4),
+      'integration': this.addVariance(54, 0.6),
+      'refund': this.addVariance(43, 0.7),
+      'urgent': this.addVariance(32, 0.8),
+      'escalated': this.addVariance(21, 0.9),
+      'vip': this.addVariance(18, 1.0),
+    };
+    
+    // CSAT metrics (good performance, 85-90% range)
+    const satisfactionGoodTotal = this.addVariance(340, 0.2);
+    const satisfactionBadTotal = this.addVariance(45, 0.4);
+    const totalRatings = satisfactionGoodTotal + satisfactionBadTotal;
+    const satisfactionScoreRate = (satisfactionGoodTotal / totalRatings) * 100;
+    
+    return {
+      ticketsByChannel,
+      ticketsByPriority,
+      ticketsByTag: commonTags,
+      satisfactionScoreRate: this.addVariance(satisfactionScoreRate, 0.1),
+      satisfactionGoodTotal,
+      satisfactionBadTotal,
+    };
+  }
+
+  /**
+   * Mock SLA detail metrics with realistic breach patterns
+   * @returns {Promise<Object>} Mock SLA metrics
+   */
+  async getSLADetailMetrics() {
+    await this.mockDelay();
+    
+    return {
+      breachCount: {
+        reply_time: this.addVariance(12, 0.5),
+        resolution_time: this.addVariance(8, 0.6),
+      },
+      breachRateByPriority: {
+        low: this.addVariance(18, 0.4), // Higher breach rate for low priority
+        normal: this.addVariance(12, 0.3),
+        high: this.addVariance(8, 0.4),
+        urgent: this.addVariance(5, 0.5), // Lower breach rate for urgent
+      },
+    };
+  }
+
+  /**
+   * Mock operational metrics with realistic counts
+   * @returns {Promise<Object>} Mock operational metrics
+   */
+  async getOperationalMetrics() {
+    await this.mockDelay();
+    
+    return {
+      suspendedTicketsTotal: this.addVariance(23, 0.8), // Spam queue size
+      automationsCount: this.addVariance(15, 0.2), // Stable automation count
+      triggersCount: this.addVariance(28, 0.15), // Stable trigger count  
+      macrosCount: this.addVariance(45, 0.1), // Stable macro count
+    };
+  }
+
   async testConnection() {
     await this.mockDelay();
     logger.info('Mock connection test - OK');

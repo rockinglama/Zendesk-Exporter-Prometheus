@@ -10,6 +10,28 @@ const {
   ticketsCreated,
   ticketsByGroup,
   exporterInfo,
+  // New metrics
+  reopenedTicketsTotal,
+  reopenedTicketsRate,
+  oneTouchResolutionRate,
+  repliesPerTicketAvg,
+  requesterWaitTimeSeconds,
+  backlogAgeTickets,
+  ticketsPerAssignee,
+  unassignedTicketsTotal,
+  assignmentRate,
+  ticketsByChannel,
+  ticketsByPriority,
+  ticketsByTag,
+  satisfactionScoreRate,
+  satisfactionGoodTotal,
+  satisfactionBadTotal,
+  slaBreachCount,
+  slaBreachRateByPriority,
+  suspendedTicketsTotal,
+  automationsCount,
+  triggersCount,
+  macrosCount,
 } = require('./metrics');
 
 class MetricsCollector {
@@ -89,7 +111,8 @@ class MetricsCollector {
     try {
       logger.info('Starting metrics collection');
       
-      // Collect all metrics in parallel where possible
+      // Collect all metrics in parallel where possible for better performance
+      // Use Promise.allSettled to ensure resilience - partial failures won't stop other metrics
       const [
         ticketCounts,
         unsolvedCount,
@@ -97,6 +120,11 @@ class MetricsCollector {
         slaMetrics,
         replyMetrics,
         groupCounts,
+        efficiencyMetrics,
+        capacityMetrics,
+        channelMetrics,
+        slaDetailMetrics,
+        operationalMetrics,
       ] = await Promise.allSettled([
         this.client.getTicketCounts(),
         this.client.getUnsolvedTicketCount(),
@@ -104,6 +132,11 @@ class MetricsCollector {
         this.client.getSLAMetrics(),
         this.client.getReplyTimeMetrics(),
         this.client.getTicketsByGroup(),
+        this.client.getEfficiencyMetrics(),
+        this.client.getCapacityMetrics(),
+        this.client.getChannelMetrics(),
+        this.client.getSLADetailMetrics(),
+        this.client.getOperationalMetrics(),
       ]);
 
       // Update ticket counts by status
@@ -165,6 +198,139 @@ class MetricsCollector {
         logger.debug('Updated tickets by group');
       } else {
         logger.error('Failed to collect tickets by group', groupCounts.reason);
+      }
+
+      // === UPDATE NEW METRICS ===
+
+      // Update efficiency metrics
+      if (efficiencyMetrics.status === 'fulfilled') {
+        const {
+          reopenedTotal,
+          reopenedRate,
+          oneTouchRate,
+          avgReplies,
+          avgRequesterWait,
+        } = efficiencyMetrics.value;
+
+        reopenedTicketsTotal.set(reopenedTotal);
+        reopenedTicketsRate.set(reopenedRate);
+        oneTouchResolutionRate.set(oneTouchRate);
+        repliesPerTicketAvg.set(avgReplies);
+        requesterWaitTimeSeconds.set(avgRequesterWait);
+        
+        logger.debug('Updated efficiency metrics');
+      } else {
+        logger.error('Failed to collect efficiency metrics', efficiencyMetrics.reason);
+      }
+
+      // Update capacity metrics  
+      if (capacityMetrics.status === 'fulfilled') {
+        const {
+          backlogAge,
+          ticketsPerAssignee: assigneeTickets,
+          unassignedTotal,
+          assignmentRate: assignedRate,
+        } = capacityMetrics.value;
+
+        // Clear existing backlog age and assignee metrics
+        backlogAgeTickets.reset();
+        ticketsPerAssignee.reset();
+
+        Object.entries(backlogAge).forEach(([bucket, count]) => {
+          backlogAgeTickets.set({ bucket }, count);
+        });
+
+        Object.entries(assigneeTickets).forEach(([assignee_id, count]) => {
+          // GDPR compliance: use only numeric IDs, never names
+          ticketsPerAssignee.set({ assignee_id }, count);
+        });
+
+        unassignedTicketsTotal.set(unassignedTotal);
+        assignmentRate.set(assignedRate);
+        
+        logger.debug('Updated capacity metrics');
+      } else {
+        logger.error('Failed to collect capacity metrics', capacityMetrics.reason);
+      }
+
+      // Update channel metrics
+      if (channelMetrics.status === 'fulfilled') {
+        const {
+          ticketsByChannel: channelCounts,
+          ticketsByPriority: priorityCounts,
+          ticketsByTag: tagCounts,
+          satisfactionScoreRate: csatRate,
+          satisfactionGoodTotal: goodTotal,
+          satisfactionBadTotal: badTotal,
+        } = channelMetrics.value;
+
+        // Clear existing channel, priority, and tag metrics
+        ticketsByChannel.reset();
+        ticketsByPriority.reset();
+        ticketsByTag.reset();
+
+        Object.entries(channelCounts).forEach(([channel, count]) => {
+          ticketsByChannel.set({ channel }, count);
+        });
+
+        Object.entries(priorityCounts).forEach(([priority, count]) => {
+          ticketsByPriority.set({ priority }, count);
+        });
+
+        Object.entries(tagCounts).forEach(([tag, count]) => {
+          ticketsByTag.set({ tag }, count);
+        });
+
+        satisfactionScoreRate.set(csatRate);
+        satisfactionGoodTotal.set(goodTotal);
+        satisfactionBadTotal.set(badTotal);
+        
+        logger.debug('Updated channel metrics');
+      } else {
+        logger.error('Failed to collect channel metrics', channelMetrics.reason);
+      }
+
+      // Update SLA detail metrics
+      if (slaDetailMetrics.status === 'fulfilled') {
+        const {
+          breachCount,
+          breachRateByPriority: breachRates,
+        } = slaDetailMetrics.value;
+
+        // Clear existing SLA metrics
+        slaBreachCount.reset();
+        slaBreachRateByPriority.reset();
+
+        Object.entries(breachCount).forEach(([metric, count]) => {
+          slaBreachCount.set({ metric }, count);
+        });
+
+        Object.entries(breachRates).forEach(([priority, rate]) => {
+          slaBreachRateByPriority.set({ priority }, rate);
+        });
+        
+        logger.debug('Updated SLA detail metrics');
+      } else {
+        logger.error('Failed to collect SLA detail metrics', slaDetailMetrics.reason);
+      }
+
+      // Update operational metrics
+      if (operationalMetrics.status === 'fulfilled') {
+        const {
+          suspendedTicketsTotal: suspendedTotal,
+          automationsCount: automationCount,
+          triggersCount: triggerCount,
+          macrosCount: macroCount,
+        } = operationalMetrics.value;
+
+        suspendedTicketsTotal.set(suspendedTotal);
+        automationsCount.set(automationCount);
+        triggersCount.set(triggerCount);
+        macrosCount.set(macroCount);
+        
+        logger.debug('Updated operational metrics');
+      } else {
+        logger.error('Failed to collect operational metrics', operationalMetrics.reason);
       }
 
       this.collectionErrors = 0; // Reset error counter on success
