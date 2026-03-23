@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  zendesk-exporter:
+    build: .
+    ports:
+      - "9091:9091"
+    environment:
+      - PORT=9091
+      - SCRAPE_INTERVAL_SECONDS=60
+      - ZENDESK_MOCK=true
+      - LOG_LEVEL=info
+      # For production with API token:
+      # - ZENDESK_SUBDOMAIN=your-subdomain
+      # - ZENDESK_EMAIL=your-email@company.com
+      # - ZENDESK_API_TOKEN=your-api-token
+      # Or with OAuth token:
+      # - ZENDESK_SUBDOMAIN=your-subdomain
+      # - ZENDESK_OAUTH_TOKEN=your-oauth-token
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:9091/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    depends_on:
+      - zendesk-exporter
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+volumes:
+  grafana-storage:
