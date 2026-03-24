@@ -121,7 +121,8 @@
       "id": 10,
       "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
       "targets": [{ "expr": "zendesk_first_reply_time_seconds" }],
-      "title": "Avg First Reply Time",
+      "title": "Avg First Reply Time (30d)",
+      "description": "Business hours average from last 30d solved tickets (sampled, see Data Transparency)",
       "type": "stat"
     },
     {
@@ -136,7 +137,8 @@
       "id": 11,
       "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
       "targets": [{ "expr": "zendesk_full_resolution_time_seconds" }],
-      "title": "Avg Resolution Time",
+      "title": "Avg Resolution Time (30d)",
+      "description": "Business hours average from last 30d solved tickets (sampled)",
       "type": "stat"
     },
     {
@@ -151,7 +153,8 @@
       "id": 12,
       "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
       "targets": [{ "expr": "zendesk_requester_wait_time_seconds" }],
-      "title": "Avg Customer Wait Time",
+      "title": "Avg Customer Wait Time (30d)",
+      "description": "Business hours average from last 30d solved tickets (sampled)",
       "type": "stat"
     },
 
@@ -240,7 +243,8 @@
       "id": 30,
       "options": { "displayLabels": ["name", "value"], "legend": { "displayMode": "table", "placement": "right" }, "pieType": "donut", "reduceOptions": { "calcs": ["lastNotNull"] } },
       "targets": [{ "expr": "zendesk_tickets_by_channel", "legendFormat": "{{channel}}" }],
-      "title": "By Channel",
+      "title": "By Channel (30d sample)",
+      "description": "From up to 1000 tickets created in last 30 days",
       "type": "piechart"
     },
     {
@@ -280,7 +284,8 @@
       "id": 33,
       "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
       "targets": [{ "expr": "topk(10, zendesk_tickets_by_tag)", "legendFormat": "{{tag}}" }],
-      "title": "Top 10 Tags",
+      "title": "Top 10 Tags (30d sample)",
+      "description": "From up to 1000 tickets created in last 30 days",
       "type": "timeseries"
     },
 
@@ -369,6 +374,55 @@
       "targets": [{ "expr": "zendesk_macros_count" }],
       "title": "Macros",
       "type": "stat"
+    },
+
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 50 },
+      "id": 700,
+      "title": "ℹ️ Data Transparency",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 51 },
+      "id": 60,
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "zendesk_sample_size{metric_group=\"reply_times\"}" }],
+      "title": "Sample: Reply Times",
+      "description": "Tickets sampled for first reply / resolution time averages (last 30d solved, max 200)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 51 },
+      "id": 61,
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "zendesk_sample_size{metric_group=\"quality\"}" }],
+      "title": "Sample: Quality",
+      "description": "Tickets sampled for one-touch rate / replies avg / wait time (last 30d solved, max 200)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 51 },
+      "id": 62,
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "zendesk_sample_size{metric_group=\"channels\"}" }],
+      "title": "Sample: Channels & Tags",
+      "description": "Tickets sampled for channel + tag distribution (last 30d created, max 1000)",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 51 },
+      "id": 63,
+      "options": { "content": "**Data sources:**\n- Ticket counts, priority, backlog: **exact** (Search Count API)\n- Channels, tags: **sampled** (last 30d, up to 1000)\n- Reply/resolution times, quality: **sampled** (last 30d solved, up to 200 metrics)\n- Rates (reopen, one-touch, assignment): **calculated in Grafana**", "mode": "markdown" },
+      "title": "Legend",
+      "type": "text"
     }
   ],
   "refresh": "60s",

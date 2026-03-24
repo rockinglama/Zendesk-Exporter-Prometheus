@@ -2,29 +2,32 @@ const axios = require('axios');
 const logger = require('./logger');
 
 /**
- * @constant {number} MAX_SAMPLES - Max results per aggregation query
+ * Search API returns max 1000 results (100/page × 10 pages).
+ * We paginate up to this limit for representative samples.
+ * @constant {number}
  */
-const MAX_SAMPLES = 100;
+const SEARCH_MAX_RESULTS = 1000;
+const SEARCH_PER_PAGE = 100;
+const SEARCH_MAX_PAGES = 10;
 
-/**
- * @constant {string[]} PRIORITY_LEVELS - Zendesk ticket priority values
- */
+/** @constant {string[]} */
 const PRIORITY_LEVELS = ['low', 'normal', 'high', 'urgent'];
 
 /**
- * Zendesk REST API v2 client.
- * Read-only — only GET requests, no writes.
+ * Zendesk REST API v2 client — read-only (GET requests only).
  * Supports API token (Basic Auth) and OAuth Bearer token.
+ *
+ * Data sources and their limitations:
+ * - Search count API: exact counts, no result limit
+ * - Search API: max 1000 results (100/page × 10 pages), sorted by relevance
+ * - ticket_metrics API: NOT USED (sorts by ticket ID asc = oldest first, useless for 70k+ tickets)
+ *
+ * All time-windowed metrics use the Search API with date filters,
+ * so they reflect recent data, not the oldest tickets.
  *
  * @class ZendeskClient
  */
 class ZendeskClient {
-  /**
-   * @param {string} subdomain - Zendesk subdomain (e.g. "mycompany")
-   * @param {string} [email] - Agent email for API token auth
-   * @param {string} [apiToken] - Personal API token
-   * @param {string} [oauthToken] - OAuth Bearer token (takes precedence)
-   */
   constructor(subdomain, email, apiToken, oauthToken) {
     this.baseUrl = `https://${subdomain}.zendesk.com/api/v2`;
     this.lastRequest = 0;
@@ -65,13 +68,12 @@ class ZendeskClient {
   }
 
   /**
-   * Rate-limited GET request.
-   * @param {string} path - API path (e.g. '/search/count.json')
-   * @param {Object} [params] - Query parameters
-   * @returns {Promise<Object>} Response data
+   * Rate-limited GET request (~200 req/min).
+   * @param {string} path
+   * @param {Object} [params]
+   * @returns {Promise<Object>}
    */
   async makeRequest(path, params = {}) {
-    // ~200 req/min max
     const elapsed = Date.now() - this.lastRequest;
     if (elapsed < 300) await this.sleep(300 - elapsed);
     this.lastRequest = Date.now();
@@ -86,9 +88,9 @@ class ZendeskClient {
   }
 
   /**
-   * Helper: search count query with error handling.
-   * @param {string} query - Zendesk search query
-   * @param {string} [label] - Label for log messages
+   * Search count — returns exact count, no result limit.
+   * @param {string} query
+   * @param {string} [label]
    * @returns {Promise<number>}
    */
   async getSearchCount(query, label = 'search') {
@@ -102,10 +104,42 @@ class ZendeskClient {
   }
 
   /**
-   * Format date for Zendesk search queries.
-   * @param {number} daysAgo
-   * @returns {string} YYYY-MM-DD
+   * Paginated search — fetches up to 1000 ticket results.
+   * Uses sort_by=created_at&sort_order=desc so newest tickets come first.
+   * @param {string} query - Zendesk search query (must include type:ticket)
+   * @param {number} [maxPages=SEARCH_MAX_PAGES] - Max pages to fetch (1-10)
+   * @returns {Promise<Object[]>} Array of ticket objects
    */
+  async searchTickets(query, maxPages = SEARCH_MAX_PAGES) {
+    const allResults = [];
+
+    for (let page = 1; page <= maxPages; page++) {
+      try {
+        const data = await this.makeRequest('/search.json', {
+          query,
+          per_page: SEARCH_PER_PAGE,
+          sort_by: 'created_at',
+          sort_order: 'desc',
+          page,
+        });
+
+        if (!data.results?.length) break;
+        allResults.push(...data.results);
+
+        // Stop if we got all results or no next page
+        if (!data.next_page || allResults.length >= (data.count || 0)) break;
+
+        logger.debug(`Search page ${page}: ${allResults.length}/${data.count} results`);
+      } catch (error) {
+        logger.warn(`Search pagination failed on page ${page}: ${error.message}`);
+        break;
+      }
+    }
+
+    return allResults;
+  }
+
+  /** @returns {string} YYYY-MM-DD */
   formatDate(daysAgo = 0) {
     const d = new Date();
     d.setDate(d.getDate() - daysAgo);
@@ -113,10 +147,10 @@ class ZendeskClient {
   }
 
   // -----------------------------------------------------------------------
-  // Ticket counts
+  // Ticket counts (exact via search count API — no sample limitation)
   // -----------------------------------------------------------------------
 
-  /** Current ticket count per status */
+  /** Current ticket count per status (all tickets, all time) */
   async getTicketCounts() {
     const statuses = ['new', 'open', 'pending', 'hold', 'solved', 'closed'];
     const results = {};
@@ -126,21 +160,20 @@ class ZendeskClient {
     return results;
   }
 
-  /** Unsolved tickets (everything except solved + closed) */
+  /** All unsolved tickets (all time) */
   async getUnsolvedTicketCount() {
     return this.getSearchCount('type:ticket -status:solved -status:closed', 'unsolved');
   }
 
-  /** Cumulative total of all tickets ever created */
+  /** Cumulative total of all tickets ever created (all time) */
   async getTicketsCreatedTotal() {
     return this.getSearchCount('type:ticket', 'tickets created total');
   }
 
   /** Tickets solved in the last 30 days */
   async getSolvedTicketsTotal() {
-    const since = this.formatDate(30);
     return this.getSearchCount(
-      `type:ticket status:solved solved>${since}`,
+      `type:ticket status:solved solved>${this.formatDate(30)}`,
       'solved tickets (30d)'
     );
   }
@@ -149,13 +182,13 @@ class ZendeskClient {
   // Distribution
   // -----------------------------------------------------------------------
 
-  /** Ticket count per support group */
+  /** Ticket count per support group (all tickets, all time) */
   async getTicketsByGroup() {
     try {
       const { groups } = await this.makeRequest('/groups.json');
-      const results = {};
-      if (!groups) return results;
+      if (!groups) return {};
 
+      const results = {};
       for (const g of groups) {
         results[g.name] = await this.getSearchCount(
           `type:ticket group_id:${g.id}`,
@@ -171,7 +204,10 @@ class ZendeskClient {
 
   /**
    * Channel, priority, and tag distribution.
-   * Channels come from ticket via.channel (no search filter exists for this).
+   *
+   * - Channels: from ticket via.channel, sample of last 30d (up to 1000 tickets)
+   * - Priority: exact counts via search count API (all tickets)
+   * - Tags: from ticket data, sample of last 30d (up to 1000 tickets)
    */
   async getChannelMetrics() {
     const results = {
@@ -180,24 +216,35 @@ class ZendeskClient {
       ticketsByTag: {},
     };
 
-    // Channels — fetch tickets and group by via.channel
+    // Channels + Tags — paginated search of last 30 days (up to 1000 tickets)
     try {
-      const { results: tickets } = await this.makeRequest('/search.json', {
-        query: `type:ticket created>${this.formatDate(30)}`,
-        per_page: MAX_SAMPLES,
+      const tickets = await this.searchTickets(
+        `type:ticket created>${this.formatDate(30)}`
+      );
+
+      logger.info(`Channel/tag analysis: ${tickets.length} tickets from last 30 days`);
+
+      // Group by via.channel
+      tickets.forEach((t) => {
+        const ch = t.via?.channel || 'unknown';
+        results.ticketsByChannel[ch] = (results.ticketsByChannel[ch] || 0) + 1;
       });
 
-      if (Array.isArray(tickets)) {
-        tickets.forEach((t) => {
-          const ch = t.via?.channel || 'unknown';
-          results.ticketsByChannel[ch] = (results.ticketsByChannel[ch] || 0) + 1;
+      // Count tags
+      const tagCounts = {};
+      tickets.forEach((t) => {
+        (t.tags || []).forEach((tag) => {
+          if (tag) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
         });
-      }
+      });
+      results.ticketsByTag = Object.fromEntries(
+        Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 10)
+      );
     } catch (error) {
-      logger.warn('Failed to get tickets by channel', error.message);
+      logger.warn('Failed to get channel/tag distribution', error.message);
     }
 
-    // Priority — search API supports this natively
+    // Priority — exact counts (all tickets, all time)
     for (const p of PRIORITY_LEVELS) {
       results.ticketsByPriority[p] = await this.getSearchCount(
         `type:ticket priority:${p}`,
@@ -205,133 +252,160 @@ class ZendeskClient {
       );
     }
 
-    // Tags — fetch tickets and count tag occurrences
-    try {
-      const { results: tickets } = await this.makeRequest('/search.json', {
-        query: `type:ticket created>${this.formatDate(30)}`,
-        per_page: MAX_SAMPLES,
-      });
-
-      if (Array.isArray(tickets)) {
-        const tagCounts = {};
-        tickets.forEach((t) => {
-          (t.tags || []).forEach((tag) => {
-            if (tag) tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-          });
-        });
-        // Top 10 only
-        results.ticketsByTag = Object.fromEntries(
-          Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 10)
-        );
-      }
-    } catch (error) {
-      logger.warn('Failed to get tag distribution', error.message);
-    }
-
     return results;
   }
 
   // -----------------------------------------------------------------------
-  // Response times (from ticket_metrics API)
-  // -----------------------------------------------------------------------
-
-  /** Average first reply and full resolution times in seconds (business hours) */
-  async getReplyTimeMetrics() {
-    try {
-      const { ticket_metrics: metrics } = await this.makeRequest('/ticket_metrics.json', {
-        page: 1,
-        per_page: MAX_SAMPLES,
-      });
-
-      if (!metrics?.length) throw new Error('No ticket metrics');
-
-      const replyMetrics = metrics.filter(
-        (m) => m.reply_time_in_minutes?.business != null
-      );
-      const resolutionMetrics = metrics.filter(
-        (m) => m.full_resolution_time_in_minutes?.business != null
-      );
-
-      const avg = (arr, fn) =>
-        arr.length ? Math.floor((arr.reduce((s, m) => s + fn(m), 0) / arr.length) * 60) : null;
-
-      return {
-        firstReplyTime:
-          avg(replyMetrics, (m) => m.reply_time_in_minutes.business) ?? 3600,
-        fullResolutionTime:
-          avg(resolutionMetrics, (m) => m.full_resolution_time_in_minutes.business) ?? 86400,
-      };
-    } catch (error) {
-      logger.error('Failed to get reply time metrics', error);
-      return { firstReplyTime: 3600, fullResolutionTime: 86400 };
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // Quality indicators (raw counts — Grafana calculates rates)
+  // Response times + Quality
+  // Uses Search API with sideloaded metric_sets for recent tickets,
+  // NOT /ticket_metrics.json (which returns oldest tickets first).
   // -----------------------------------------------------------------------
 
   /**
-   * Raw quality counts:
-   * - reopenedTotal: tickets reopened in last 30d
-   * - oneTouchTotal: tickets solved with <=1 reply
-   * - avgReplies: average replies per ticket
-   * - avgRequesterWait: average requester wait time in seconds
+   * Average response times from recently solved tickets (last 30 days).
+   * Fetches up to 1000 solved tickets via paginated search, then reads
+   * the metric fields from each ticket's metric_set sideload.
+   *
+   * Sample size: up to 1000 tickets (Search API limit).
+   * Time window: last 30 days.
+   */
+  async getReplyTimeMetrics() {
+    try {
+      const tickets = await this.searchTickets(
+        `type:ticket status:solved solved>${this.formatDate(30)}`
+      );
+
+      if (!tickets.length) {
+        logger.warn('No solved tickets found for reply time calculation');
+        return { firstReplyTime: 0, fullResolutionTime: 0, sampleSize: 0 };
+      }
+
+      // Fetch metrics for these tickets via their IDs (batch via ticket_metrics)
+      // The search results include metric_set if sideloaded, but the search API
+      // doesn't support sideloading metric_set. We fetch individual ticket metrics.
+      // To minimize API calls, fetch metrics page by page matching our ticket IDs.
+      const ticketIds = tickets.map((t) => t.id);
+      const metrics = await this.fetchTicketMetricsBatch(ticketIds);
+
+      const replyTimes = [];
+      const resolutionTimes = [];
+
+      metrics.forEach((m) => {
+        if (m.reply_time_in_minutes?.business != null) {
+          replyTimes.push(m.reply_time_in_minutes.business);
+        }
+        if (m.full_resolution_time_in_minutes?.business != null) {
+          resolutionTimes.push(m.full_resolution_time_in_minutes.business);
+        }
+      });
+
+      const avg = (arr) => arr.length ? Math.floor((arr.reduce((a, b) => a + b, 0) / arr.length) * 60) : 0;
+
+      const result = {
+        firstReplyTime: avg(replyTimes),
+        fullResolutionTime: avg(resolutionTimes),
+        sampleSize: metrics.length,
+      };
+
+      logger.info(`Reply time metrics: ${metrics.length} samples, avg first reply ${result.firstReplyTime}s, avg resolution ${result.fullResolutionTime}s`);
+      return result;
+    } catch (error) {
+      logger.error('Failed to get reply time metrics', error);
+      return { firstReplyTime: 0, fullResolutionTime: 0, sampleSize: 0 };
+    }
+  }
+
+  /**
+   * Quality metrics from recently solved tickets (last 30 days).
+   * Uses Search API (up to 1000 tickets) for representative data.
+   *
+   * Sample size: up to 1000 tickets.
+   * Time window: last 30 days.
    */
   async getQualityMetrics() {
     const since = this.formatDate(30);
 
-    // Reopened count
+    // Exact count via search count API
     const reopenedTotal = await this.getSearchCount(
       `type:ticket updated>${since} reopens>0`,
-      'reopened tickets'
+      'reopened tickets (30d)'
     );
 
-    // Ticket metrics for reply analysis
+    // Fetch solved tickets for reply analysis
     let oneTouchTotal = 0;
     let avgReplies = 0;
-    let avgRequesterWait = 7200; // 2h default
+    let avgRequesterWait = 0;
+    let sampleSize = 0;
 
     try {
-      const { ticket_metrics: metrics } = await this.makeRequest('/ticket_metrics.json', {
-        page: 1,
-        per_page: MAX_SAMPLES,
-      });
+      const tickets = await this.searchTickets(
+        `type:ticket status:solved solved>${since}`
+      );
 
-      if (metrics?.length) {
+      if (tickets.length) {
+        const ticketIds = tickets.map((t) => t.id);
+        const metrics = await this.fetchTicketMetricsBatch(ticketIds);
+        sampleSize = metrics.length;
+
         const withReplies = metrics.filter((m) => typeof m.replies === 'number');
         if (withReplies.length) {
           oneTouchTotal = withReplies.filter((m) => m.replies <= 1).length;
           avgReplies = withReplies.reduce((s, m) => s + m.replies, 0) / withReplies.length;
         }
 
-        const withWait = metrics.filter(
-          (m) => m.requester_wait_time_in_minutes?.business != null
-        );
+        const withWait = metrics.filter((m) => m.requester_wait_time_in_minutes?.business != null);
         if (withWait.length) {
           avgRequesterWait = Math.floor(
-            (withWait.reduce((s, m) => s + m.requester_wait_time_in_minutes.business, 0) /
-              withWait.length) *
-              60
+            (withWait.reduce((s, m) => s + m.requester_wait_time_in_minutes.business, 0) / withWait.length) * 60
           );
         }
       }
+
+      logger.info(`Quality metrics: ${sampleSize} samples from last 30d`);
     } catch (error) {
-      logger.warn('Failed to get ticket metrics for quality', error.message);
+      logger.warn('Failed to get quality metrics', error.message);
     }
 
-    return { reopenedTotal, oneTouchTotal, avgReplies, avgRequesterWait };
+    return { reopenedTotal, oneTouchTotal, avgReplies, avgRequesterWait, sampleSize };
+  }
+
+  /**
+   * Fetch ticket metrics for a batch of ticket IDs.
+   * Uses individual /tickets/{id}/metrics.json calls.
+   * Caps at 200 to stay within rate limits per scrape cycle.
+   *
+   * @param {number[]} ticketIds
+   * @param {number} [maxFetch=200] - Max individual metrics to fetch
+   * @returns {Promise<Object[]>} Array of ticket_metric objects
+   */
+  async fetchTicketMetricsBatch(ticketIds, maxFetch = 200) {
+    const idsToFetch = ticketIds.slice(0, maxFetch);
+    const metrics = [];
+
+    for (const id of idsToFetch) {
+      try {
+        const data = await this.makeRequest(`/tickets/${id}/metrics.json`);
+        if (data.ticket_metric) {
+          metrics.push(data.ticket_metric);
+        }
+      } catch (error) {
+        // Skip individual failures (deleted tickets, permission issues)
+        logger.debug(`Failed to fetch metrics for ticket ${id}: ${error.message}`);
+      }
+    }
+
+    logger.debug(`Fetched metrics for ${metrics.length}/${idsToFetch.length} tickets`);
+    return metrics;
   }
 
   // -----------------------------------------------------------------------
-  // Backlog / capacity
+  // Backlog / capacity (exact counts via search count API)
   // -----------------------------------------------------------------------
 
-  /** Open ticket age distribution + unassigned count */
+  /** Open ticket age distribution + unassigned count (all open tickets) */
   async getCapacityMetrics() {
     const results = { backlogAge: {}, unassignedTotal: 0 };
 
-    // Age buckets
     const buckets = [
       ['lt_1d', `type:ticket status<solved created>${this.formatDate(1)}`],
       ['1d_3d', `type:ticket status<solved created<${this.formatDate(1)} created>${this.formatDate(3)}`],
@@ -356,52 +430,28 @@ class ZendeskClient {
   // Operational
   // -----------------------------------------------------------------------
 
-  /** Suspended tickets, active automations, triggers, macros */
   async getOperationalMetrics() {
-    const results = {
-      suspendedTicketsTotal: 0,
-      automationsCount: 0,
-      triggersCount: 0,
-      macrosCount: 0,
-    };
+    const results = { suspendedTicketsTotal: 0, automationsCount: 0, triggersCount: 0, macrosCount: 0 };
 
-    // Suspended tickets
     try {
       const data = await this.makeRequest('/suspended_tickets.json', { per_page: 1 });
       results.suspendedTicketsTotal = data.count || 0;
-    } catch (error) {
-      logger.warn('Failed to get suspended tickets', error.message);
-    }
+    } catch (e) { logger.warn('Failed to get suspended tickets', e.message); }
 
-    // Automations (active only)
     try {
       const { automations } = await this.makeRequest('/automations.json');
-      if (Array.isArray(automations)) {
-        results.automationsCount = automations.filter((a) => a.active).length;
-      }
-    } catch (error) {
-      logger.warn('Failed to get automations', error.message);
-    }
+      if (Array.isArray(automations)) results.automationsCount = automations.filter((a) => a.active).length;
+    } catch (e) { logger.warn('Failed to get automations', e.message); }
 
-    // Triggers (active only)
     try {
       const { triggers } = await this.makeRequest('/triggers.json');
-      if (Array.isArray(triggers)) {
-        results.triggersCount = triggers.filter((t) => t.active).length;
-      }
-    } catch (error) {
-      logger.warn('Failed to get triggers', error.message);
-    }
+      if (Array.isArray(triggers)) results.triggersCount = triggers.filter((t) => t.active).length;
+    } catch (e) { logger.warn('Failed to get triggers', e.message); }
 
-    // Macros (active only)
     try {
       const { macros } = await this.makeRequest('/macros.json');
-      if (Array.isArray(macros)) {
-        results.macrosCount = macros.filter((m) => m.active).length;
-      }
-    } catch (error) {
-      logger.warn('Failed to get macros', error.message);
-    }
+      if (Array.isArray(macros)) results.macrosCount = macros.filter((m) => m.active).length;
+    } catch (e) { logger.warn('Failed to get macros', e.message); }
 
     return results;
   }

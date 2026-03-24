@@ -105,6 +105,7 @@ class MockZendeskClient {
     return {
       firstReplyTime: this.addVariance(3600, 0.2),
       fullResolutionTime: this.addVariance(86400, 0.3),
+      sampleSize: this.addVariance(180, 0.1),
     };
   }
 
@@ -117,6 +118,7 @@ class MockZendeskClient {
       oneTouchTotal: this.addVariance(180, 0.2),
       avgReplies: parseFloat((this.addVariance(28, 0.2) / 10).toFixed(1)),
       avgRequesterWait: this.addVariance(7200, 0.3),
+      sampleSize: this.addVariance(180, 0.1),
     };
   }
 

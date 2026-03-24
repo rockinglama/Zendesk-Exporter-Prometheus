@@ -171,6 +171,17 @@ const macrosCount = new client.Gauge({
 });
 
 // ---------------------------------------------------------------------------
+// Transparency
+// ---------------------------------------------------------------------------
+
+/** Sample size for sampled metrics (Search API max: 1000, metric fetch max: 200) */
+const sampleSize = new client.Gauge({
+  name: 'zendesk_sample_size',
+  help: 'Number of tickets sampled for calculations (metric_group: reply_times, quality, channels)',
+  labelNames: ['metric_group'],
+  registers: [register],
+});
+
 // Exporter metadata
 // ---------------------------------------------------------------------------
 
@@ -215,6 +226,9 @@ module.exports = {
   automationsCount,
   triggersCount,
   macrosCount,
+
+  // Transparency
+  sampleSize,
 
   // Meta
   exporterInfo,

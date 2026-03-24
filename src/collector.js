@@ -22,6 +22,7 @@ const {
   automationsCount,
   triggersCount,
   macrosCount,
+  sampleSize,
   exporterInfo,
 } = require('./metrics');
 
@@ -147,7 +148,7 @@ class MetricsCollector {
       // Groups
       this.applyMap(rGroups, ticketsByGroup, 'tickets by group', true);
 
-      // Channel distribution
+      // Channel distribution (channels + tags sampled from last 30d, priority is exact)
       if (rChannels.status === 'fulfilled') {
         const ch = rChannels.value;
 
@@ -165,25 +166,32 @@ class MetricsCollector {
         Object.entries(ch.ticketsByTag).forEach(([tag, count]) => {
           ticketsByTag.set({ tag }, count);
         });
+
+        // Channel sample size = sum of channel counts (= number of tickets analyzed)
+        const channelSample = Object.values(ch.ticketsByChannel).reduce((a, b) => a + b, 0);
+        sampleSize.set({ metric_group: 'channels' }, channelSample);
       } else {
         logger.error('Failed to collect channel metrics', rChannels.reason);
       }
 
-      // Response times
+      // Response times (sampled from last 30d solved tickets)
       if (rReplyTimes.status === 'fulfilled') {
-        firstReplyTime.set(rReplyTimes.value.firstReplyTime);
-        fullResolutionTime.set(rReplyTimes.value.fullResolutionTime);
+        const rt = rReplyTimes.value;
+        firstReplyTime.set(rt.firstReplyTime);
+        fullResolutionTime.set(rt.fullResolutionTime);
+        sampleSize.set({ metric_group: 'reply_times' }, rt.sampleSize || 0);
       } else {
         logger.error('Failed to collect reply time metrics', rReplyTimes.reason);
       }
 
-      // Quality (raw counts)
+      // Quality (raw counts, sampled from last 30d solved tickets)
       if (rQuality.status === 'fulfilled') {
         const q = rQuality.value;
         reopenedTicketsTotal.set(q.reopenedTotal);
         oneTouchTicketsTotal.set(q.oneTouchTotal);
         repliesPerTicketAvg.set(q.avgReplies);
         requesterWaitTimeSeconds.set(q.avgRequesterWait);
+        sampleSize.set({ metric_group: 'quality' }, q.sampleSize || 0);
       } else {
         logger.error('Failed to collect quality metrics', rQuality.reason);
       }
