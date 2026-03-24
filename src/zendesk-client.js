@@ -22,9 +22,9 @@ const MAX_AGGREGATION_SAMPLES = 1000;
 const PRIORITY_LEVELS = ['low', 'normal', 'high', 'urgent'];
 
 /**
- * Channel mapping for consistent labeling  
+ * Channel types are detected dynamically from ticket via.channel values.
+ * Common values: email, web, chat, voice, api, facebook, twitter, etc.
  */
-const CHANNEL_TYPES = ['email', 'chat', 'phone', 'web', 'api'];
 
 /**
  * Age bucket thresholds in milliseconds
@@ -523,12 +523,24 @@ class ZendeskClient {
         ticketsByTag: {},
       };
       
-      // Get tickets by channel
-      for (const channel of CHANNEL_TYPES) {
-        results.ticketsByChannel[channel] = await this.getSearchCount(
-          `type:ticket via:${channel}`,
-          `tickets by channel ${channel}`
-        );
+      // Get tickets by channel — the search API does not support "via:" as a filter,
+      // so we fetch a sample of recent tickets and group by via.channel clientside.
+      try {
+        const ticketsData = await this.makeRequest('/search.json', {
+          query: `type:ticket created>${this.formatDateForQuery(30)}`,
+          per_page: Math.min(MAX_AGGREGATION_SAMPLES, 100),
+        });
+
+        if (ticketsData.results && Array.isArray(ticketsData.results)) {
+          const channelCounts = {};
+          ticketsData.results.forEach(ticket => {
+            const channel = ticket.via?.channel || 'unknown';
+            channelCounts[channel] = (channelCounts[channel] || 0) + 1;
+          });
+          results.ticketsByChannel = channelCounts;
+        }
+      } catch (error) {
+        logger.warn('Failed to get tickets by channel', error.message);
       }
       
       // Get tickets by priority
@@ -694,16 +706,15 @@ class ZendeskClient {
         macrosCount: 0,
       };
       
-      // Get suspended tickets count
+      // Get suspended tickets count — no /count.json endpoint exists,
+      // so we fetch page 1 and read the count from the response metadata.
       try {
-        const suspendedData = await this.makeRequest('/suspended_tickets/count.json');
+        const suspendedData = await this.makeRequest('/suspended_tickets.json', {
+          per_page: 1,
+        });
         results.suspendedTicketsTotal = suspendedData.count || 0;
       } catch (error) {
-        logger.warn('Failed to get suspended tickets count, using search fallback', error.message);
-        results.suspendedTicketsTotal = await this.getSearchCount(
-          'type:ticket status:suspended',
-          'suspended tickets'
-        );
+        logger.warn('Failed to get suspended tickets count', error.message);
       }
       
       // Get automations count

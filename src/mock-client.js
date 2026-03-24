@@ -155,11 +155,11 @@ class MockZendeskClient {
   async getChannelMetrics() {
     await this.mockDelay();
     
-    // Realistic channel distribution
+    // Realistic channel distribution (via.channel values from Zendesk)
     const ticketsByChannel = {
       email: this.addVariance(850, 0.15),
       chat: this.addVariance(320, 0.25),
-      phone: this.addVariance(180, 0.3),
+      voice: this.addVariance(180, 0.3),
       web: this.addVariance(120, 0.4),
       api: this.addVariance(50, 0.6),
     };
