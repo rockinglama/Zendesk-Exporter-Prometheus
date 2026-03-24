@@ -34,14 +34,17 @@ class MockZendeskClient {
     return counts.new + counts.open + counts.pending + counts.hold;
   }
 
-  async getTicketsCreatedByPeriod() {
+  /**
+   * Mock cumulative total of all tickets.
+   * Increases slowly over time to simulate real ticket creation.
+   * @returns {Promise<number>}
+   */
+  async getTicketsCreatedTotal() {
     await this.mockDelay();
-    
-    return {
-      '24h': this.addVariance(45, 0.4),
-      '7d': this.addVariance(320, 0.2),
-      '30d': this.addVariance(1350, 0.15),
-    };
+    // Simulate a growing total — base count + ~45 tickets/day since start
+    const daysSinceStart = (Date.now() - this.startTime) / (24 * 60 * 60 * 1000);
+    const growth = Math.floor(daysSinceStart * 45);
+    return this.addVariance(this.baseTicketCount + growth, 0.02);
   }
 
   async getSLAMetrics() {
@@ -138,16 +141,8 @@ class MockZendeskClient {
     const totalOpen = Object.values(backlogAge).reduce((sum, count) => sum + count, 0);
     const assignmentRate = Math.min(100, ((totalOpen - unassignedTotal) / totalOpen) * 100);
     
-    // Mock assignee distribution (use numeric IDs only)
-    const assigneeIds = ['101', '102', '103', '104', '105', '106'];
-    const ticketsPerAssignee = {};
-    assigneeIds.forEach(id => {
-      ticketsPerAssignee[id] = this.addVariance(35, 0.4);
-    });
-    
     return {
       backlogAge,
-      ticketsPerAssignee,
       unassignedTotal,
       assignmentRate: this.addVariance(assignmentRate, 0.1),
     };
@@ -191,19 +186,10 @@ class MockZendeskClient {
       'vip': this.addVariance(18, 1.0),
     };
     
-    // CSAT metrics (good performance, 85-90% range)
-    const satisfactionGoodTotal = this.addVariance(340, 0.2);
-    const satisfactionBadTotal = this.addVariance(45, 0.4);
-    const totalRatings = satisfactionGoodTotal + satisfactionBadTotal;
-    const satisfactionScoreRate = (satisfactionGoodTotal / totalRatings) * 100;
-    
     return {
       ticketsByChannel,
       ticketsByPriority,
       ticketsByTag: commonTags,
-      satisfactionScoreRate: this.addVariance(satisfactionScoreRate, 0.1),
-      satisfactionGoodTotal,
-      satisfactionBadTotal,
     };
   }
 

@@ -187,28 +187,20 @@ class ZendeskClient {
     }
   }
 
-  async getTicketsCreatedByPeriod() {
+  /**
+   * Get the cumulative total of all tickets ever created.
+   * Prometheus best practice: export the total, let Grafana compute
+   * delta(zendesk_tickets_created_total[1h]) for any time window.
+   * @returns {Promise<number>} Total ticket count
+   */
+  async getTicketsCreatedTotal() {
     try {
-      const now = new Date();
-      const periods = {
-        '24h': new Date(now.getTime() - 24 * 60 * 60 * 1000),
-        '7d': new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
-        '30d': new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
-      };
-      
-      const results = {};
-      
-      for (const [period, since] of Object.entries(periods)) {
-        const sinceStr = since.toISOString().split('T')[0]; // YYYY-MM-DD format
-        const data = await this.makeRequest('/search/count.json', {
-          query: `type:ticket created>${sinceStr}`,
-        });
-        results[period] = data.count || 0;
-      }
-      
-      return results;
+      const data = await this.makeRequest('/search/count.json', {
+        query: 'type:ticket',
+      });
+      return data.count || 0;
     } catch (error) {
-      logger.error('Failed to get tickets created by period', error);
+      logger.error('Failed to get total tickets created', error);
       throw error;
     }
   }
@@ -468,7 +460,6 @@ class ZendeskClient {
       const now = new Date();
       const results = {
         backlogAge: {},
-        ticketsPerAssignee: {},
         unassignedTotal: 0,
         assignmentRate: 0,
       };
@@ -511,30 +502,6 @@ class ZendeskClient {
       const assignedTickets = totalOpenTickets - results.unassignedTotal;
       results.assignmentRate = this.calculatePercentage(assignedTickets, totalOpenTickets);
       
-      // Get tickets per assignee (using search to respect privacy - only IDs)
-      try {
-        // Get a sample of tickets with assignee info
-        const ticketsData = await this.makeRequest('/search.json', {
-          query: 'type:ticket status<solved assignee_id>0',
-          per_page: Math.min(MAX_AGGREGATION_SAMPLES, 1000),
-        });
-        
-        if (ticketsData.results && Array.isArray(ticketsData.results)) {
-          const assigneeCounts = {};
-          
-          ticketsData.results.forEach(ticket => {
-            if (ticket.assignee_id) {
-              const id = ticket.assignee_id.toString(); // Use ID only, never name
-              assigneeCounts[id] = (assigneeCounts[id] || 0) + 1;
-            }
-          });
-          
-          results.ticketsPerAssignee = assigneeCounts;
-        }
-      } catch (error) {
-        logger.warn('Failed to get tickets per assignee, using empty data', error.message);
-      }
-      
       logger.debug(`Calculated capacity metrics: ${totalOpenTickets} total open, ${results.unassignedTotal} unassigned`);
       
       return results;
@@ -554,9 +521,6 @@ class ZendeskClient {
         ticketsByChannel: {},
         ticketsByPriority: {},
         ticketsByTag: {},
-        satisfactionScoreRate: 0,
-        satisfactionGoodTotal: 0,
-        satisfactionBadTotal: 0,
       };
       
       // Get tickets by channel
@@ -573,38 +537,6 @@ class ZendeskClient {
           `type:ticket priority:${priority}`,
           `tickets by priority ${priority}`
         );
-      }
-      
-      // Get satisfaction ratings (aggregated only, no PII)
-      try {
-        const thirtyDaysAgo = this.formatDateForQuery(30);
-        
-        const [goodRatings, badRatings] = await Promise.allSettled([
-          this.makeRequest('/satisfaction_ratings.json', {
-            score: 'good',
-            start_time: thirtyDaysAgo,
-            per_page: 1, // We only need count, not data
-          }),
-          this.makeRequest('/satisfaction_ratings.json', {
-            score: 'bad', 
-            start_time: thirtyDaysAgo,
-            per_page: 1, // We only need count, not data
-          }),
-        ]);
-        
-        if (goodRatings.status === 'fulfilled' && goodRatings.value.satisfaction_ratings) {
-          results.satisfactionGoodTotal = goodRatings.value.count || 0;
-        }
-        
-        if (badRatings.status === 'fulfilled' && badRatings.value.satisfaction_ratings) {
-          results.satisfactionBadTotal = badRatings.value.count || 0;
-        }
-        
-        const totalRatings = results.satisfactionGoodTotal + results.satisfactionBadTotal;
-        results.satisfactionScoreRate = this.calculatePercentage(results.satisfactionGoodTotal, totalRatings);
-        
-      } catch (error) {
-        logger.warn('Failed to get satisfaction ratings, using defaults', error.message);
       }
       
       // Get top tags (using search to get tag distribution)
@@ -640,7 +572,7 @@ class ZendeskClient {
         logger.warn('Failed to get tag distribution, using empty data', error.message);
       }
       
-      logger.debug(`Calculated channel metrics: ${Object.keys(results.ticketsByChannel).length} channels, ${results.satisfactionGoodTotal + results.satisfactionBadTotal} total ratings`);
+      logger.debug(`Calculated channel metrics: ${Object.keys(results.ticketsByChannel).length} channels, ${Object.keys(results.ticketsByTag).length} tags`);
       
       return results;
     } catch (error) {
