@@ -2,51 +2,34 @@ const logger = require('./logger');
 const ZendeskClient = require('./zendesk-client');
 const MockZendeskClient = require('./mock-client');
 const {
-  // Core
   ticketsTotal,
   unsolvedTickets,
   ticketsCreatedTotal,
+  solvedTicketsTotal,
   ticketsByGroup,
-
-  // SLA
-  slaAchievementRate,
-  slaBreachCount,
-  slaBreachRateByPriority,
-
-  // Response times
-  firstReplyTime,
-  fullResolutionTime,
-  requesterWaitTimeSeconds,
-
-  // Efficiency
-  reopenedTicketsTotal,
-  reopenedTicketsRate,
-  oneTouchResolutionRate,
-  repliesPerTicketAvg,
-
-  // Capacity
-  backlogAgeTickets,
-  unassignedTicketsTotal,
-  assignmentRate,
-
-  // Distribution
   ticketsByChannel,
   ticketsByPriority,
   ticketsByTag,
-
-  // Operational
+  firstReplyTime,
+  fullResolutionTime,
+  requesterWaitTimeSeconds,
+  reopenedTicketsTotal,
+  oneTouchTicketsTotal,
+  repliesPerTicketAvg,
+  backlogAgeTickets,
+  unassignedTicketsTotal,
   suspendedTicketsTotal,
   automationsCount,
   triggersCount,
   macrosCount,
-
-  // Meta
   exporterInfo,
 } = require('./metrics');
 
 /**
  * Orchestrates periodic metric collection from the Zendesk API (or mock).
- * Uses Promise.allSettled so partial API failures never block other metrics.
+ *
+ * Philosophy: collect raw data only. All rate/percentage calculations
+ * happen in Grafana dashboards, not here.
  *
  * @class MetricsCollector
  */
@@ -56,18 +39,12 @@ class MetricsCollector {
     this.isCollecting = false;
     this.lastCollectionTime = null;
     this.collectionErrors = 0;
-
-    /** Stop retrying after this many consecutive failures */
     this.maxConsecutiveErrors = 5;
 
     this.initializeClient();
     this.setExporterInfo();
   }
 
-  /**
-   * Pick real or mock client based on ZENDESK_MOCK env var.
-   * Validates auth config before creating a real client.
-   */
   initializeClient() {
     if (process.env.ZENDESK_MOCK === 'true') {
       this.client = new MockZendeskClient();
@@ -102,8 +79,7 @@ class MetricsCollector {
       ZENDESK_OAUTH_TOKEN
     );
 
-    const method = hasOAuth ? 'OAuth Bearer token' : 'API token';
-    logger.info(`Using real Zendesk client with ${method} authentication`);
+    logger.info(`Using real Zendesk client with ${hasOAuth ? 'OAuth' : 'API token'} auth`);
   }
 
   setExporterInfo() {
@@ -112,7 +88,6 @@ class MetricsCollector {
     exporterInfo.set({ version: pkg.version, mode }, 1);
   }
 
-  /** @returns {Promise<boolean>} */
   async testConnection() {
     try {
       return await this.client.testConnection();
@@ -123,9 +98,7 @@ class MetricsCollector {
   }
 
   /**
-   * Collect all metrics in one pass.
-   * Each data source runs independently via Promise.allSettled —
-   * a failure in one group never blocks the others.
+   * Collect all metrics. Each group runs independently via Promise.allSettled.
    */
   async collectMetrics() {
     if (this.isCollecting) {
@@ -143,71 +116,38 @@ class MetricsCollector {
         rTicketCounts,
         rUnsolved,
         rCreatedTotal,
-        rSla,
-        rReplyTimes,
+        rSolvedTotal,
         rGroups,
-        rEfficiency,
-        rCapacity,
         rChannels,
-        rSlaDetail,
+        rReplyTimes,
+        rQuality,
+        rCapacity,
         rOperational,
       ] = await Promise.allSettled([
         this.client.getTicketCounts(),
         this.client.getUnsolvedTicketCount(),
         this.client.getTicketsCreatedTotal(),
-        this.client.getSLAMetrics(),
-        this.client.getReplyTimeMetrics(),
+        this.client.getSolvedTicketsTotal(),
         this.client.getTicketsByGroup(),
-        this.client.getEfficiencyMetrics(),
-        this.client.getCapacityMetrics(),
         this.client.getChannelMetrics(),
-        this.client.getSLADetailMetrics(),
+        this.client.getReplyTimeMetrics(),
+        this.client.getQualityMetrics(),
+        this.client.getCapacityMetrics(),
         this.client.getOperationalMetrics(),
       ]);
 
-      // --- Core -----------------------------------------------------------
+      // Ticket counts by status
       this.applyMap(rTicketCounts, ticketsTotal, 'ticket counts');
+
+      // Scalar counts
       this.applyScalar(rUnsolved, unsolvedTickets, 'unsolved tickets');
       this.applyScalar(rCreatedTotal, ticketsCreatedTotal, 'tickets created total');
+      this.applyScalar(rSolvedTotal, solvedTicketsTotal, 'solved tickets total');
+
+      // Groups
       this.applyMap(rGroups, ticketsByGroup, 'tickets by group', true);
 
-      // --- SLA ------------------------------------------------------------
-      this.applyMap(rSla, slaAchievementRate, 'SLA achievement');
-
-      // --- Response times -------------------------------------------------
-      if (rReplyTimes.status === 'fulfilled') {
-        firstReplyTime.set(rReplyTimes.value.firstReplyTime);
-        fullResolutionTime.set(rReplyTimes.value.fullResolutionTime);
-      } else {
-        logger.error('Failed to collect reply time metrics', rReplyTimes.reason);
-      }
-
-      // --- Efficiency -----------------------------------------------------
-      if (rEfficiency.status === 'fulfilled') {
-        const e = rEfficiency.value;
-        reopenedTicketsTotal.set(e.reopenedTotal);
-        reopenedTicketsRate.set(e.reopenedRate);
-        oneTouchResolutionRate.set(e.oneTouchRate);
-        repliesPerTicketAvg.set(e.avgReplies);
-        requesterWaitTimeSeconds.set(e.avgRequesterWait);
-      } else {
-        logger.error('Failed to collect efficiency metrics', rEfficiency.reason);
-      }
-
-      // --- Capacity -------------------------------------------------------
-      if (rCapacity.status === 'fulfilled') {
-        const c = rCapacity.value;
-        backlogAgeTickets.reset();
-        Object.entries(c.backlogAge).forEach(([bucket, count]) => {
-          backlogAgeTickets.set({ bucket }, count);
-        });
-        unassignedTicketsTotal.set(c.unassignedTotal);
-        assignmentRate.set(c.assignmentRate);
-      } else {
-        logger.error('Failed to collect capacity metrics', rCapacity.reason);
-      }
-
-      // --- Distribution ---------------------------------------------------
+      // Channel distribution
       if (rChannels.status === 'fulfilled') {
         const ch = rChannels.value;
 
@@ -229,22 +169,38 @@ class MetricsCollector {
         logger.error('Failed to collect channel metrics', rChannels.reason);
       }
 
-      // --- SLA detail -----------------------------------------------------
-      if (rSlaDetail.status === 'fulfilled') {
-        const s = rSlaDetail.value;
-        slaBreachCount.reset();
-        Object.entries(s.breachCount).forEach(([metric, count]) => {
-          slaBreachCount.set({ metric }, count);
-        });
-        slaBreachRateByPriority.reset();
-        Object.entries(s.breachRateByPriority).forEach(([priority, rate]) => {
-          slaBreachRateByPriority.set({ priority }, rate);
-        });
+      // Response times
+      if (rReplyTimes.status === 'fulfilled') {
+        firstReplyTime.set(rReplyTimes.value.firstReplyTime);
+        fullResolutionTime.set(rReplyTimes.value.fullResolutionTime);
       } else {
-        logger.error('Failed to collect SLA detail metrics', rSlaDetail.reason);
+        logger.error('Failed to collect reply time metrics', rReplyTimes.reason);
       }
 
-      // --- Operational ----------------------------------------------------
+      // Quality (raw counts)
+      if (rQuality.status === 'fulfilled') {
+        const q = rQuality.value;
+        reopenedTicketsTotal.set(q.reopenedTotal);
+        oneTouchTicketsTotal.set(q.oneTouchTotal);
+        repliesPerTicketAvg.set(q.avgReplies);
+        requesterWaitTimeSeconds.set(q.avgRequesterWait);
+      } else {
+        logger.error('Failed to collect quality metrics', rQuality.reason);
+      }
+
+      // Capacity
+      if (rCapacity.status === 'fulfilled') {
+        const c = rCapacity.value;
+        backlogAgeTickets.reset();
+        Object.entries(c.backlogAge).forEach(([bucket, count]) => {
+          backlogAgeTickets.set({ bucket }, count);
+        });
+        unassignedTicketsTotal.set(c.unassignedTotal);
+      } else {
+        logger.error('Failed to collect capacity metrics', rCapacity.reason);
+      }
+
+      // Operational
       if (rOperational.status === 'fulfilled') {
         const o = rOperational.value;
         suspendedTicketsTotal.set(o.suspendedTicketsTotal);
@@ -255,7 +211,6 @@ class MetricsCollector {
         logger.error('Failed to collect operational metrics', rOperational.reason);
       }
 
-      // Reset consecutive error counter on any successful pass
       this.collectionErrors = 0;
       this.lastCollectionTime = new Date();
       logger.info(`Metrics collection completed in ${Date.now() - t0}ms`);
@@ -270,17 +225,7 @@ class MetricsCollector {
     }
   }
 
-  // -----------------------------------------------------------------------
-  // Helpers to reduce repetition in collectMetrics()
-  // -----------------------------------------------------------------------
-
-  /**
-   * Set a labelled gauge from { key: value } result.
-   * @param {PromiseSettledResult} result
-   * @param {import('prom-client').Gauge} gauge
-   * @param {string} label - for log messages
-   * @param {boolean} [reset=false] - reset gauge before setting
-   */
+  /** Set a labelled gauge from { key: value } */
   applyMap(result, gauge, label, reset = false) {
     if (result.status === 'fulfilled') {
       if (reset) gauge.reset();
@@ -291,12 +236,7 @@ class MetricsCollector {
     }
   }
 
-  /**
-   * Set a scalar gauge from a single-value result.
-   * @param {PromiseSettledResult} result
-   * @param {import('prom-client').Gauge} gauge
-   * @param {string} label
-   */
+  /** Set a scalar gauge */
   applyScalar(result, gauge, label) {
     if (result.status === 'fulfilled') {
       gauge.set(result.value);

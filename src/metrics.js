@@ -1,32 +1,29 @@
 const client = require('prom-client');
 
 /**
- * Prometheus metric registry and metric definitions for the Zendesk exporter.
+ * Prometheus metric registry and definitions for the Zendesk exporter.
  *
  * Design principles:
- * - All metrics are Gauges (we poll a REST API, not an event stream)
- * - Current-state metrics (tickets_total, unsolved) are point-in-time snapshots
- * - For time-based analysis, export totals and let Grafana handle windowing
- *   via delta()/increase() over the desired range
- * - No PII in labels — only IDs, categories, and aggregates
- * - Label cardinality is bounded (no unbounded user/ticket labels)
+ * - Exporter only exports raw data — counts, totals, averages from the API
+ * - All rate/percentage calculations happen in Grafana queries
+ * - Gauges only (we poll a REST API, not an event stream)
+ * - No PII in labels — only categories, IDs, and aggregates
+ * - Bounded label cardinality
  *
  * @module metrics
  */
 
 const register = new client.Registry();
 
-// Add Node.js process metrics (CPU, memory, GC, event loop)
 client.collectDefaultMetrics({
   register,
   prefix: 'zendesk_exporter_',
 });
 
 // ---------------------------------------------------------------------------
-// Core ticket metrics
+// Ticket counts
 // ---------------------------------------------------------------------------
 
-/** Current ticket count by status (point-in-time snapshot) */
 const ticketsTotal = new client.Gauge({
   name: 'zendesk_tickets_total',
   help: 'Current ticket count by status',
@@ -34,25 +31,28 @@ const ticketsTotal = new client.Gauge({
   registers: [register],
 });
 
-/** Total unsolved tickets (new + open + pending + hold) */
 const unsolvedTickets = new client.Gauge({
   name: 'zendesk_unsolved_tickets_total',
-  help: 'Total number of unsolved tickets',
+  help: 'Total unsolved tickets (new + open + pending + hold)',
   registers: [register],
 });
 
-/**
- * Cumulative count of all tickets ever created.
- * Use delta(zendesk_tickets_created_total[24h]) in Grafana
- * to get tickets created in the last 24 hours, or any other window.
- */
 const ticketsCreatedTotal = new client.Gauge({
   name: 'zendesk_tickets_created_total',
   help: 'Cumulative total of all tickets ever created (use delta() in Grafana for time windows)',
   registers: [register],
 });
 
-/** Current ticket count by support group */
+const solvedTicketsTotal = new client.Gauge({
+  name: 'zendesk_solved_tickets_total',
+  help: 'Tickets solved in the last 30 days (for rate calculations in Grafana)',
+  registers: [register],
+});
+
+// ---------------------------------------------------------------------------
+// Distribution
+// ---------------------------------------------------------------------------
+
 const ticketsByGroup = new client.Gauge({
   name: 'zendesk_tickets_by_group',
   help: 'Ticket count by support group',
@@ -60,130 +60,13 @@ const ticketsByGroup = new client.Gauge({
   registers: [register],
 });
 
-// ---------------------------------------------------------------------------
-// SLA metrics
-// ---------------------------------------------------------------------------
-
-/** SLA achievement rate by channel (estimated from ticket metrics) */
-const slaAchievementRate = new client.Gauge({
-  name: 'zendesk_sla_achievement_rate',
-  help: 'SLA achievement rate percentage by channel (0-100)',
-  labelNames: ['channel'],
-  registers: [register],
-});
-
-/** Current SLA breach count by metric type */
-const slaBreachCount = new client.Gauge({
-  name: 'zendesk_sla_breach_count',
-  help: 'Current number of SLA breaches by metric type',
-  labelNames: ['metric'],
-  registers: [register],
-});
-
-/** SLA breach rate by ticket priority */
-const slaBreachRateByPriority = new client.Gauge({
-  name: 'zendesk_sla_breach_rate_by_priority',
-  help: 'SLA breach rate percentage by priority level (0-100)',
-  labelNames: ['priority'],
-  registers: [register],
-});
-
-// ---------------------------------------------------------------------------
-// Response time metrics
-// ---------------------------------------------------------------------------
-
-/** Average first reply time (business hours, last 30 days) */
-const firstReplyTime = new client.Gauge({
-  name: 'zendesk_first_reply_time_seconds',
-  help: 'Average first reply time in seconds (business hours, last 30 days)',
-  registers: [register],
-});
-
-/** Average full resolution time (business hours, last 30 days) */
-const fullResolutionTime = new client.Gauge({
-  name: 'zendesk_full_resolution_time_seconds',
-  help: 'Average full resolution time in seconds (business hours, last 30 days)',
-  registers: [register],
-});
-
-/** Average total requester wait time */
-const requesterWaitTimeSeconds = new client.Gauge({
-  name: 'zendesk_requester_wait_time_seconds',
-  help: 'Average total requester wait time in seconds',
-  registers: [register],
-});
-
-// ---------------------------------------------------------------------------
-// Efficiency & quality metrics
-// ---------------------------------------------------------------------------
-
-/** Tickets reopened in last 30 days */
-const reopenedTicketsTotal = new client.Gauge({
-  name: 'zendesk_reopened_tickets_total',
-  help: 'Number of tickets reopened in the last 30 days',
-  registers: [register],
-});
-
-/** Reopen rate as percentage of solved tickets */
-const reopenedTicketsRate = new client.Gauge({
-  name: 'zendesk_reopened_tickets_rate',
-  help: 'Percentage of solved tickets that were reopened (0-100)',
-  registers: [register],
-});
-
-/** One-touch resolution rate */
-const oneTouchResolutionRate = new client.Gauge({
-  name: 'zendesk_one_touch_resolution_rate',
-  help: 'Percentage of tickets resolved with a single reply (0-100)',
-  registers: [register],
-});
-
-/** Average agent replies per ticket until resolution */
-const repliesPerTicketAvg = new client.Gauge({
-  name: 'zendesk_replies_per_ticket_avg',
-  help: 'Average number of agent replies per ticket until resolution',
-  registers: [register],
-});
-
-// ---------------------------------------------------------------------------
-// Capacity & workload metrics
-// ---------------------------------------------------------------------------
-
-/** Open ticket age distribution */
-const backlogAgeTickets = new client.Gauge({
-  name: 'zendesk_backlog_age_tickets',
-  help: 'Open ticket count by age bucket',
-  labelNames: ['bucket'],
-  registers: [register],
-});
-
-/** Tickets with no assignee */
-const unassignedTicketsTotal = new client.Gauge({
-  name: 'zendesk_unassigned_tickets_total',
-  help: 'Number of open tickets with no assignee',
-  registers: [register],
-});
-
-/** Assignment rate of open tickets */
-const assignmentRate = new client.Gauge({
-  name: 'zendesk_assignment_rate',
-  help: 'Percentage of open tickets that are assigned (0-100)',
-  registers: [register],
-});
-
-// ---------------------------------------------------------------------------
-// Distribution metrics
-// ---------------------------------------------------------------------------
-
-/** Ticket distribution by communication channel */
 const ticketsByChannel = new client.Gauge({
   name: 'zendesk_tickets_by_channel',
-  help: 'Ticket count by communication channel',
+  help: 'Ticket count by communication channel (from via.channel)',
   labelNames: ['channel'],
   registers: [register],
 });
 
-/** Ticket distribution by priority level */
 const ticketsByPriority = new client.Gauge({
   name: 'zendesk_tickets_by_priority',
   help: 'Ticket count by priority level',
@@ -191,7 +74,6 @@ const ticketsByPriority = new client.Gauge({
   registers: [register],
 });
 
-/** Top ticket tags by frequency */
 const ticketsByTag = new client.Gauge({
   name: 'zendesk_tickets_by_tag',
   help: 'Ticket count for top 10 tags',
@@ -200,31 +82,88 @@ const ticketsByTag = new client.Gauge({
 });
 
 // ---------------------------------------------------------------------------
-// Operational metrics
+// Response times (averages from Zendesk ticket_metrics API)
 // ---------------------------------------------------------------------------
 
-/** Suspended/spam queue size */
-const suspendedTicketsTotal = new client.Gauge({
-  name: 'zendesk_suspended_tickets_total',
-  help: 'Number of tickets in suspended/spam queue',
+const firstReplyTime = new client.Gauge({
+  name: 'zendesk_first_reply_time_seconds',
+  help: 'Average first reply time in seconds (business hours)',
   registers: [register],
 });
 
-/** Active automation rule count */
+const fullResolutionTime = new client.Gauge({
+  name: 'zendesk_full_resolution_time_seconds',
+  help: 'Average full resolution time in seconds (business hours)',
+  registers: [register],
+});
+
+const requesterWaitTimeSeconds = new client.Gauge({
+  name: 'zendesk_requester_wait_time_seconds',
+  help: 'Average total requester wait time in seconds',
+  registers: [register],
+});
+
+// ---------------------------------------------------------------------------
+// Quality indicators (raw counts — Grafana calculates rates)
+// ---------------------------------------------------------------------------
+
+const reopenedTicketsTotal = new client.Gauge({
+  name: 'zendesk_reopened_tickets_total',
+  help: 'Tickets reopened in the last 30 days (Grafana: reopened / solved * 100 = reopen rate)',
+  registers: [register],
+});
+
+const oneTouchTicketsTotal = new client.Gauge({
+  name: 'zendesk_one_touch_tickets_total',
+  help: 'Tickets solved with <= 1 agent reply (Grafana: one_touch / solved * 100 = one-touch rate)',
+  registers: [register],
+});
+
+const repliesPerTicketAvg = new client.Gauge({
+  name: 'zendesk_replies_per_ticket_avg',
+  help: 'Average number of agent replies per ticket (from ticket_metrics API)',
+  registers: [register],
+});
+
+// ---------------------------------------------------------------------------
+// Backlog
+// ---------------------------------------------------------------------------
+
+const backlogAgeTickets = new client.Gauge({
+  name: 'zendesk_backlog_age_tickets',
+  help: 'Open ticket count by age bucket',
+  labelNames: ['bucket'],
+  registers: [register],
+});
+
+const unassignedTicketsTotal = new client.Gauge({
+  name: 'zendesk_unassigned_tickets_total',
+  help: 'Open tickets with no assignee (Grafana: (unsolved - unassigned) / unsolved * 100 = assignment rate)',
+  registers: [register],
+});
+
+// ---------------------------------------------------------------------------
+// Operational
+// ---------------------------------------------------------------------------
+
+const suspendedTicketsTotal = new client.Gauge({
+  name: 'zendesk_suspended_tickets_total',
+  help: 'Tickets in suspended/spam queue',
+  registers: [register],
+});
+
 const automationsCount = new client.Gauge({
   name: 'zendesk_automations_count',
   help: 'Number of active automations',
   registers: [register],
 });
 
-/** Active trigger rule count */
 const triggersCount = new client.Gauge({
   name: 'zendesk_triggers_count',
   help: 'Number of active triggers',
   registers: [register],
 });
 
-/** Active macro count */
 const macrosCount = new client.Gauge({
   name: 'zendesk_macros_count',
   help: 'Number of active macros',
@@ -235,7 +174,6 @@ const macrosCount = new client.Gauge({
 // Exporter metadata
 // ---------------------------------------------------------------------------
 
-/** Exporter version and mode info */
 const exporterInfo = new client.Gauge({
   name: 'zendesk_exporter_info',
   help: 'Exporter version and mode',
@@ -246,37 +184,31 @@ const exporterInfo = new client.Gauge({
 module.exports = {
   register,
 
-  // Core
+  // Counts
   ticketsTotal,
   unsolvedTickets,
   ticketsCreatedTotal,
-  ticketsByGroup,
+  solvedTicketsTotal,
 
-  // SLA
-  slaAchievementRate,
-  slaBreachCount,
-  slaBreachRateByPriority,
+  // Distribution
+  ticketsByGroup,
+  ticketsByChannel,
+  ticketsByPriority,
+  ticketsByTag,
 
   // Response times
   firstReplyTime,
   fullResolutionTime,
   requesterWaitTimeSeconds,
 
-  // Efficiency
+  // Quality (raw counts)
   reopenedTicketsTotal,
-  reopenedTicketsRate,
-  oneTouchResolutionRate,
+  oneTouchTicketsTotal,
   repliesPerTicketAvg,
 
-  // Capacity
+  // Backlog
   backlogAgeTickets,
   unassignedTicketsTotal,
-  assignmentRate,
-
-  // Distribution
-  ticketsByChannel,
-  ticketsByPriority,
-  ticketsByTag,
 
   // Operational
   suspendedTicketsTotal,
