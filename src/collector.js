@@ -78,7 +78,7 @@ class MetricsCollector {
         for (const window of ['1d', '7d', '30d']) {
           m.ticketsCreated[window].set(w.created[window]);
           m.solvedTickets[window].set(w.solved[window]);
-          m.reopenedTickets[window].set(w.reopened[window]);
+          // reopened comes from quality metrics (ticket_metrics.reopens field)
         }
       } else {
         logger.error('Failed: windowed counts', rWindowed.reason);
@@ -110,6 +110,7 @@ class MetricsCollector {
           m.requesterWaitTime[window].set(d.requesterWaitTime);
           m.oneTouchTickets[window].set(d.oneTouchTotal);
           m.repliesPerTicketAvg[window].set(d.avgReplies);
+          m.reopenedTickets[window].set(d.reopenedTotal);
           m.sampleSize.set({ window }, d.sampleSize);
         }
       } else {

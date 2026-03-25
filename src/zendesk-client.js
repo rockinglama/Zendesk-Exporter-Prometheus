@@ -160,9 +160,9 @@ class ZendeskClient {
       results.solved[w] = await this.getSearchCount(
         `type:ticket status:solved solved>${since}`, `solved (${w})`
       );
-      results.reopened[w] = await this.getSearchCount(
-        `type:ticket updated>${since} reopens>0`, `reopened (${w})`
-      );
+      // reopened counts come from getQualityMetrics() (ticket_metrics.reopens field)
+      // "reopens" is not a valid search keyword
+      results.reopened[w] = 0;
     }
 
     return results;
@@ -187,7 +187,7 @@ class ZendeskClient {
       results[w] = {
         firstReplyTime: 0, fullResolutionTime: 0,
         requesterWaitTime: 0, oneTouchTotal: 0,
-        avgReplies: 0, sampleSize: 0,
+        avgReplies: 0, reopenedTotal: 0, sampleSize: 0,
       };
     }
 
@@ -248,12 +248,18 @@ class ZendeskClient {
 
         const avg = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 
+        // Count reopened tickets (reopens > 0 in ticket_metrics)
+        const reopenedCount = windowData.filter(
+          (e) => typeof e.metrics.reopens === 'number' && e.metrics.reopens > 0
+        ).length;
+
         results[w] = {
           firstReplyTime: Math.floor(avg(replyTimes) * 60),
           fullResolutionTime: Math.floor(avg(resolutionTimes) * 60),
           requesterWaitTime: Math.floor(avg(waitTimes) * 60),
           oneTouchTotal: withReplies.filter((e) => e.metrics.replies <= 1).length,
           avgReplies: parseFloat(avg(withReplies.map((e) => e.metrics.replies)).toFixed(1)),
+          reopenedTotal: reopenedCount,
           sampleSize: windowData.length,
         };
       }
@@ -331,7 +337,7 @@ class ZendeskClient {
       if (!groups) return {};
       const results = {};
       for (const g of groups) {
-        results[g.name] = await this.getSearchCount(`type:ticket group_id:${g.id}`, `group ${g.name}`);
+        results[g.name] = await this.getSearchCount(`type:ticket group:${g.id}`, `group ${g.name}`);
       }
       return results;
     } catch (error) {
