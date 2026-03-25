@@ -80,7 +80,7 @@ const solvedTickets = windowedGauges(
 
 const reopenedTickets = windowedGauges(
   'zendesk_reopened_tickets',
-  'Tickets reopened (exact count)'
+  'Tickets reopened (sampled from solved tickets, ticket_metrics.reopens)'
 );
 
 // ---------------------------------------------------------------------------

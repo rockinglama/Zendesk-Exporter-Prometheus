@@ -5,7 +5,7 @@ Prometheus exporter for Zendesk Support metrics. Exports raw ticket KPIs — all
 ## Features
 
 - **Dual Auth**: OAuth Bearer token or API token (Basic Auth)
-- **Windowed Metrics**: Every quality/count metric available for 1d, 7d, and 30d
+- **Windowed Metrics**: Quality/count metrics for 1d, 7d, and 30d
 - **GDPR Compliant**: No PII — only aggregated counts, averages, and categories
 - **Transparent Sampling**: Sample sizes exported as metrics, time windows in HELP texts
 - **Docker Stack**: Exporter + Prometheus + Grafana with pre-built dashboard
@@ -13,30 +13,36 @@ Prometheus exporter for Zendesk Support metrics. Exports raw ticket KPIs — all
 
 ## Metrics
 
-### All-Time Counts (exact, Search Count API)
+### All-Time Ticket Counts (exact, Search Count API)
 
 | Metric | Description |
 |--------|-------------|
-| `zendesk_tickets_total{status}` | Current tickets by status |
-| `zendesk_unsolved_tickets_total` | All unsolved tickets |
-| `zendesk_tickets_created_total` | Cumulative total (use `delta()` in Grafana) |
+| `zendesk_tickets_total{status}` | Current tickets by status (labelled) |
+| `zendesk_tickets_total_new` | Current new tickets |
+| `zendesk_tickets_total_open` | Current open tickets |
+| `zendesk_tickets_total_pending` | Current pending tickets |
+| `zendesk_tickets_total_hold` | Current hold tickets |
+| `zendesk_tickets_total_solved` | Current solved tickets |
+| `zendesk_tickets_total_closed` | Current closed tickets |
+| `zendesk_tickets_created_total` | Cumulative total ever created (use `delta()` in Grafana) |
 | `zendesk_tickets_by_group{group}` | Tickets per support group |
 | `zendesk_tickets_by_priority{priority}` | Tickets per priority level |
 | `zendesk_unassigned_tickets_total` | Open tickets without assignee |
+| `zendesk_suspended_tickets_total` | Suspended/spam queue |
 
 ### Windowed Counts (exact, Search Count API)
 
-Available for `_last_1d`, `_last_7d`, `_last_30d`:
+Available as `_last_1d`, `_last_7d`, `_last_30d`:
 
 | Metric | Description |
 |--------|-------------|
 | `zendesk_tickets_created_last_*` | Tickets created in window |
 | `zendesk_solved_tickets_last_*` | Tickets solved in window |
-| `zendesk_reopened_tickets_last_*` | Tickets reopened in window |
+| `zendesk_reopened_tickets_last_*` | Tickets reopened in window (from ticket_metrics.reopens) |
 
-### Windowed Quality (sampled from solved tickets, max 200 metrics)
+### Windowed Quality (sampled from solved tickets, max 200 metrics fetched)
 
-Available for `_last_1d`, `_last_7d`, `_last_30d`:
+Available as `_last_1d`, `_last_7d`, `_last_30d`:
 
 | Metric | Description |
 |--------|-------------|
@@ -59,41 +65,36 @@ Available for `_last_1d`, `_last_7d`, `_last_30d`:
 |--------|-------------|
 | `zendesk_backlog_age_tickets{bucket}` | Open tickets by age (`lt_1d`, `1d_3d`, `3d_7d`, `7d_30d`, `gt_30d`) |
 
-### Operational
-
-| Metric | Description |
-|--------|-------------|
-| `zendesk_suspended_tickets_total` | Suspended/spam queue |
-| `zendesk_automations_count` | Active automations |
-| `zendesk_triggers_count` | Active triggers |
-| `zendesk_macros_count` | Active macros |
-
-### Transparency
+### Transparency & Metadata
 
 | Metric | Description |
 |--------|-------------|
 | `zendesk_sample_size{window}` | Tickets sampled per window for quality metrics |
-| `zendesk_exporter_info{version,mode}` | Exporter metadata |
+| `zendesk_exporter_info{version,mode}` | Exporter version and mode |
 
-### Grafana-Calculated Rates
+### Grafana-Calculated Values
 
-These are **not exported** — calculate them in Grafana:
+These are **not exported** — calculate in Grafana:
 
-| Rate | PromQL |
-|------|--------|
+| Value | PromQL |
+|-------|--------|
+| Unsolved | `zendesk_tickets_total_new + zendesk_tickets_total_open + zendesk_tickets_total_pending + zendesk_tickets_total_hold` |
 | Reopen Rate | `zendesk_reopened_tickets_last_30d / zendesk_solved_tickets_last_30d * 100` |
 | One-Touch Rate | `zendesk_one_touch_tickets_last_30d / zendesk_sample_size{window="30d"} * 100` |
-| Assignment Rate | `(zendesk_unsolved_tickets_total - zendesk_unassigned_tickets_total) / zendesk_unsolved_tickets_total * 100` |
+| Assignment Rate | `((unsolved) - zendesk_unassigned_tickets_total) / (unsolved) * 100` |
+| Burn Rate | `zendesk_solved_tickets_last_1d - zendesk_tickets_created_last_1d` |
+| Ticket Rate/h | `rate(zendesk_tickets_total{status="open"}[1h])` |
 
 ## Data Sources & Limitations
 
 | Data | Source | Accuracy |
 |------|--------|----------|
-| Ticket counts, priority, backlog | Search Count API | **Exact** |
-| Created/solved/reopened per window | Search Count API | **Exact** |
-| Response times, quality | Search API → `/tickets/{id}/metrics` | **Sampled** (max 200 metrics fetched) |
+| Ticket counts, priority, backlog, groups | Search Count API | **Exact** |
+| Created/solved per window | Search Count API | **Exact** |
+| Reopened per window | ticket_metrics.reopens field | **Sampled** (max 200) |
+| Response times, quality | `/tickets/{id}/metrics` | **Sampled** (max 200 metrics) |
 | Channels, tags | Search API (last 30d) | **Sampled** (max 1000 tickets) |
-| SLA achievement/breach | **Not implemented** — Zendesk REST API v2 doesn't expose SLA achievement rates. Use Zendesk Explore for SLA reporting. |
+| SLA achievement/breach | **Not implemented** — use Zendesk Explore |
 
 ## Authentication
 
@@ -114,7 +115,7 @@ ZENDESK_API_TOKEN=your-api-token
 
 If both are set, OAuth takes precedence.
 
-**Security recommendation**: Create a dedicated Light Agent or read-only admin for monitoring. Zendesk API tokens inherit the user's permissions — the exporter only makes GET requests but the token itself isn't scoped.
+**Security**: Create a dedicated Light Agent for monitoring. The exporter only makes GET requests but API tokens inherit user permissions.
 
 ## Quick Start
 
@@ -136,81 +137,74 @@ Services:
 ```bash
 npm install
 ZENDESK_MOCK=true npm start
-# or with real credentials:
-ZENDESK_SUBDOMAIN=x ZENDESK_EMAIL=x ZENDESK_API_TOKEN=x npm start
 ```
 
 ## Configuration
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `ZENDESK_SUBDOMAIN` | Yes* | — | Subdomain (the part before `.zendesk.com`) |
+| `ZENDESK_SUBDOMAIN` | Yes* | — | Part before `.zendesk.com` |
 | `ZENDESK_OAUTH_TOKEN` | No* | — | OAuth Bearer token |
 | `ZENDESK_EMAIL` | No* | — | Agent email for API token auth |
 | `ZENDESK_API_TOKEN` | No* | — | Personal API token |
-| `ZENDESK_MOCK` | No | `false` | Use mock data (no API calls) |
+| `ZENDESK_MOCK` | No | `false` | Use mock data |
 | `PORT` | No | `9091` | HTTP server port |
-| `SCRAPE_INTERVAL_SECONDS` | No | `300` | Collection interval in seconds |
-| `LOG_LEVEL` | No | `info` | Log level (`debug`, `info`, `warn`, `error`) |
+| `SCRAPE_INTERVAL_SECONDS` | No | `300` | Collection interval |
+| `LOG_LEVEL` | No | `info` | `debug`, `info`, `warn`, `error` |
 
-\* Either `ZENDESK_OAUTH_TOKEN` or both `ZENDESK_EMAIL` + `ZENDESK_API_TOKEN` required (unless `ZENDESK_MOCK=true`).
+\* Either `ZENDESK_OAUTH_TOKEN` or both `ZENDESK_EMAIL` + `ZENDESK_API_TOKEN` required (unless mock mode).
 
 ## API Call Budget
 
-Per scrape cycle (~220 calls, fits within Zendesk's 200 req/min with the 300ms throttle):
+Per scrape cycle (~220 calls at 300ms throttle ≈ 70s):
 
-| Call | Count | Purpose |
-|------|-------|---------|
-| Search Count | ~20 | Exact ticket counts (status, priority, backlog, windows) |
-| Search (paginated) | ~10 | Fetch solved tickets (30d) for quality metrics |
-| `/tickets/{id}/metrics` | ≤200 | Individual ticket metrics for reply/resolution times |
-| Groups/automations/etc. | ~10 | Distribution and operational data |
+| Calls | Purpose |
+|-------|---------|
+| ~15 | Exact counts (status, priority, backlog, windows) |
+| ~10 | Paginated search for solved tickets (30d) |
+| ≤200 | Individual `/tickets/{id}/metrics` |
+| ~10 | Groups, channels/tags search, suspended, connection test |
 
-## Zendesk API Endpoints Used (all GET, read-only)
+## Zendesk API Endpoints (all GET, read-only)
 
 - `/api/v2/search/count.json` — exact ticket counts
 - `/api/v2/search.json` — ticket data for channel/tag/quality analysis
 - `/api/v2/tickets/{id}/metrics.json` — per-ticket response time metrics
 - `/api/v2/groups.json` — support groups
 - `/api/v2/suspended_tickets.json` — suspended queue
-- `/api/v2/automations.json` — active automations
-- `/api/v2/triggers.json` — active triggers
-- `/api/v2/macros.json` — active macros
 - `/api/v2/users/me.json` — connection test
-
-No POST/PUT/PATCH/DELETE requests. The exporter is strictly read-only.
 
 ## Grafana Dashboard
 
-Pre-provisioned dashboard with sections:
+Pre-provisioned sections:
 
-- **📊 Overview** — ticket status, unsolved, created, unassigned
-- **📈 Ticket Rates** — created/solved/reopened bars for 1d, 7d, 30d
-- **⏱️ Response Times** — first reply, resolution, wait time per window
-- **🎯 Quality** — reopen rate, one-touch rate, replies/ticket, assignment rate (calculated in Grafana)
-- **📊 Distribution** — by channel, priority, group, top tags
-- **⚖️ Backlog** — age distribution pie + stacked trend
-- **⚙️ Operational** — suspended, automations, triggers, macros
-- **ℹ️ Data Transparency** — sample sizes per window + legend
+- **📊 Overview** — status pie, total created, unsolved, unassigned, suspended, assignment rate
+- **📈 Tickets rate by hour** — `rate()` per status over time
+- **📈 Ticket Rates** — created/solved/reopened for 1d, 7d, 30d (color: created=red, solved=green)
+- **🔥 Burn Rate** — solved minus created per window
+- **🎯 Quality** — channel + priority distribution
+- **📊 Distribution** — top 10 tags
+- **⚖️ Backlog** — age distribution pie + trend
 
 ## Project Structure
 
 ```
 ├── src/
-│   ├── index.js          # Express server, /metrics and /health endpoints
-│   ├── zendesk-client.js # Zendesk API client (read-only, rate-limited)
+│   ├── index.js          # Express server, /metrics and /health
+│   ├── zendesk-client.js # Zendesk API client (read-only)
 │   ├── mock-client.js    # Mock data for testing
 │   ├── collector.js      # Metric collection orchestrator
 │   ├── metrics.js        # Prometheus metric definitions
 │   └── logger.js         # Winston logger
 ├── grafana/
 │   ├── dashboards/       # Pre-built dashboard JSON
-│   └── provisioning/     # Auto-provisioning config
+│   └── provisioning/     # Datasource + dashboard provisioning
 ├── prometheus/
-│   └── prometheus.yml    # Scrape config
+│   └── prometheus.yml    # Scrape config (300s interval)
 ├── docker-compose.yml
 ├── Dockerfile
-└── .env.example
+├── .env.example
+└── .gitignore
 ```
 
 ## License
