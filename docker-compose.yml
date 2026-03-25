@@ -3,18 +3,8 @@ services:
     build: .
     ports:
       - "9091:9091"
-    environment:
-      - PORT=9091
-      - SCRAPE_INTERVAL_SECONDS=300
-      - ZENDESK_MOCK=true
-      - LOG_LEVEL=info
-      # For production with API token:
-      # - ZENDESK_SUBDOMAIN=your-subdomain
-      # - ZENDESK_EMAIL=your-email@company.com
-      # - ZENDESK_API_TOKEN=your-api-token
-      # Or with OAuth token:
-      # - ZENDESK_SUBDOMAIN=your-subdomain
-      # - ZENDESK_OAUTH_TOKEN=your-oauth-token
+    env_file:
+      - .env
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:9091/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
       interval: 30s
