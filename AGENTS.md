@@ -19,6 +19,8 @@ Every change must be reflected across ALL affected layers:
 
 **Architecture changes** (e.g. new/removed metrics, API changes, new data sources, changed design principles) **must update this AGENTS.md** — keep the decisions, constraints, and metric lists current so future agents don't repeat mistakes or contradict prior decisions.
 
+**Changelog**: update `CHANGELOG.md` for every user-facing change (new metrics, removed features, breaking changes). Follow [Keep a Changelog](https://keepachangelog.com/) format.
+
 ## Project Overview
 
 Node.js Prometheus exporter that scrapes Zendesk Support ticket KPIs via REST API v2 and exposes them as Prometheus metrics. Grafana dashboard included.
