@@ -27,18 +27,18 @@ spec:
               containerPort: 9091
               protocol: TCP
           env:
+            # --- App config (not secret) ---
             - name: PORT
               value: "9091"
             - name: SCRAPE_INTERVAL_SECONDS
               value: "300"
             - name: LOG_LEVEL
               value: "info"
+            # --- Zendesk config (not secret) ---
             - name: ZENDESK_SUBDOMAIN
-              valueFrom:
-                secretKeyRef:
-                  name: zendesk-exporter
-                  key: subdomain
-            # --- Auth option 1: API token ---
+              value: "yourcompany"  # Replace with your subdomain
+            # --- Secrets (from Secret resource) ---
+            # Auth option 1: API token
             - name: ZENDESK_EMAIL
               valueFrom:
                 secretKeyRef:
@@ -51,7 +51,7 @@ spec:
                   name: zendesk-exporter
                   key: api-token
                   optional: true
-            # --- Auth option 2: OAuth token ---
+            # Auth option 2: OAuth token
             - name: ZENDESK_OAUTH_TOKEN
               valueFrom:
                 secretKeyRef:
