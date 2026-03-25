@@ -119,10 +119,6 @@ prometheus/         — Scrape config
 k8s/                — Kubernetes manifests
 ```
 
-## Git
-- Push: `TOKEN=$(cat /Users/igor/github-token.txt | tr -d '[:space:]') && git push "https://${TOKEN}@github.com/rockinglama/Zendesk-Exporter-Prometheus.git" main`
-- Email: `user@users.noreply.github.com`
-
 ## Environment
 - Port: 9091 (default)
 - Scrape interval: 300s
