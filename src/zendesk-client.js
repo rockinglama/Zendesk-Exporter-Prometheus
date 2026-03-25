@@ -70,7 +70,9 @@ class ZendeskClient {
       const { data } = await this.client.get(path, { params });
       return data;
     } catch (error) {
-      logger.error(`API request failed: ${path}`, error.message);
+      const status = error.response?.status;
+      const detail = error.response?.data?.error || error.response?.data?.description || error.message;
+      logger.error(`API request failed: ${path} — ${status || 'no response'} — ${detail}`);
       throw error;
     }
   }
@@ -374,8 +376,17 @@ class ZendeskClient {
   }
 
   async testConnection() {
-    try { await this.makeRequest('/users/me.json'); logger.info('Connection OK'); return true; }
-    catch (e) { logger.error('Connection failed', e.message); return false; }
+    try {
+      const data = await this.makeRequest('/users/me.json');
+      logger.info(`Connection OK — authenticated as user ${data.user?.id || 'unknown'} (${data.user?.role || 'unknown role'})`);
+      return true;
+    } catch (e) {
+      const status = e.response?.status;
+      if (status === 401) logger.error('Connection failed — 401 Unauthorized. Check your credentials (email/token or OAuth token).');
+      else if (status === 403) logger.error('Connection failed — 403 Forbidden. Your user may lack API access.');
+      else logger.error(`Connection failed — ${status || 'no response'}: ${e.message}`);
+      return false;
+    }
   }
 }
 
