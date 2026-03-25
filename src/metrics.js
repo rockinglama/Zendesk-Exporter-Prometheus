@@ -55,11 +55,8 @@ for (const s of STATUSES) {
   });
 }
 
-const unsolvedTickets = new client.Gauge({
-  name: 'zendesk_unsolved_tickets_total',
-  help: 'Total unsolved tickets (all time)',
-  registers: [register],
-});
+// Unsolved = new + open + pending + hold → calculate in Grafana:
+// zendesk_tickets_total_new + zendesk_tickets_total_open + zendesk_tickets_total_pending + zendesk_tickets_total_hold
 
 const ticketsCreatedTotal = new client.Gauge({
   name: 'zendesk_tickets_created_total',
@@ -216,7 +213,6 @@ module.exports = {
   // All-time
   ticketsTotal,
   ticketsByStatus,
-  unsolvedTickets,
   ticketsCreatedTotal,
 
   // Windowed counts (each is { '1d': Gauge, '7d': Gauge, '30d': Gauge })

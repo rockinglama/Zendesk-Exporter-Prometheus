@@ -129,9 +129,7 @@ class ZendeskClient {
     return results;
   }
 
-  async getUnsolvedTicketCount() {
-    return this.getSearchCount('type:ticket -status:solved -status:closed', 'unsolved');
-  }
+  // Unsolved tickets = calculated in Grafana from per-status gauges
 
   async getTicketsCreatedTotal() {
     return this.getSearchCount('type:ticket', 'tickets created total');

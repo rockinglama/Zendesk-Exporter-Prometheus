@@ -51,10 +51,9 @@ class MetricsCollector {
     try {
       logger.info('Starting metrics collection');
 
-      const [rCounts, rUnsolved, rCreatedTotal, rWindowed, rGroups, rChannels, rQuality, rCapacity, rOps] =
+      const [rCounts, rCreatedTotal, rWindowed, rGroups, rChannels, rQuality, rCapacity, rOps] =
         await Promise.allSettled([
           this.client.getTicketCounts(),
-          this.client.getUnsolvedTicketCount(),
           this.client.getTicketsCreatedTotal(),
           this.client.getWindowedCounts(),
           this.client.getTicketsByGroup(),
@@ -71,7 +70,6 @@ class MetricsCollector {
           if (m.ticketsByStatus[status]) m.ticketsByStatus[status].set(count);
         });
       }
-      this.applyScalar(rUnsolved, m.unsolvedTickets, 'unsolved');
       this.applyScalar(rCreatedTotal, m.ticketsCreatedTotal, 'created total');
 
       // Windowed counts (created, solved, reopened × 1d/7d/30d)

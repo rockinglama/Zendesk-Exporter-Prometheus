@@ -16,7 +16,6 @@ class MockZendeskClient {
     return { new: this.v(t * 0.15, 0.3), open: this.v(t * 0.25, 0.2), pending: this.v(t * 0.2, 0.3), hold: this.v(t * 0.1, 0.4), solved: this.v(t * 0.25, 0.1), closed: this.v(t * 0.05, 0.5) };
   }
 
-  async getUnsolvedTicketCount() { await this.delay(); return this.v(900, 0.15); }
 
   async getTicketsCreatedTotal() {
     await this.delay();

@@ -19,7 +19,7 @@
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 80 }] } } },
       "gridPos": { "h": 3, "w": 4, "x": 8, "y": 1 }, "id": 2,
       "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
-      "targets": [{ "expr": "zendesk_unsolved_tickets_total" }],
+      "targets": [{ "expr": "zendesk_tickets_total_new + zendesk_tickets_total_open + zendesk_tickets_total_pending + zendesk_tickets_total_hold" }],
       "title": "Unsolved", "type": "stat"
     },
     {
@@ -229,7 +229,7 @@
       "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "unit": "percent", "decimals": 1, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 80 }, { "color": "green", "value": 95 }] } } },
       "gridPos": { "h": 4, "w": 4, "x": 12, "y": 30 }, "id": 24,
       "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
-      "targets": [{ "expr": "(zendesk_unsolved_tickets_total - zendesk_unassigned_tickets_total) / zendesk_unsolved_tickets_total * 100" }],
+      "targets": [{ "expr": "((zendesk_tickets_total_new + zendesk_tickets_total_open + zendesk_tickets_total_pending + zendesk_tickets_total_hold) - zendesk_unassigned_tickets_total) / (zendesk_tickets_total_new + zendesk_tickets_total_open + zendesk_tickets_total_pending + zendesk_tickets_total_hold) * 100" }],
       "title": "Assignment Rate", "type": "stat"
     },
 
