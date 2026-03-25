@@ -17,6 +17,8 @@ Every change must be reflected across ALL affected layers:
 
 **Before committing**: verify no orphaned references exist (metrics without panels, panels referencing deleted metrics, README listing removed features, tests asserting removed behavior).
 
+**Architecture changes** (e.g. new/removed metrics, API changes, new data sources, changed design principles) **must update this AGENTS.md** — keep the decisions, constraints, and metric lists current so future agents don't repeat mistakes or contradict prior decisions.
+
 ## Project Overview
 
 Node.js Prometheus exporter that scrapes Zendesk Support ticket KPIs via REST API v2 and exposes them as Prometheus metrics. Grafana dashboard included.
