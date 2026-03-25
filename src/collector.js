@@ -127,11 +127,7 @@ class MetricsCollector {
 
       // Operational
       if (rOps.status === 'fulfilled') {
-        const o = rOps.value;
-        m.suspendedTicketsTotal.set(o.suspendedTicketsTotal);
-        m.automationsCount.set(o.automationsCount);
-        m.triggersCount.set(o.triggersCount);
-        m.macrosCount.set(o.macrosCount);
+        m.suspendedTicketsTotal.set(rOps.value.suspendedTicketsTotal);
       } else {
         logger.error('Failed: operational', rOps.reason);
       }

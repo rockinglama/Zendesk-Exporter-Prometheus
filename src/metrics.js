@@ -171,23 +171,7 @@ const suspendedTicketsTotal = new client.Gauge({
   registers: [register],
 });
 
-const automationsCount = new client.Gauge({
-  name: 'zendesk_automations_count',
-  help: 'Active automations',
-  registers: [register],
-});
 
-const triggersCount = new client.Gauge({
-  name: 'zendesk_triggers_count',
-  help: 'Active triggers',
-  registers: [register],
-});
-
-const macrosCount = new client.Gauge({
-  name: 'zendesk_macros_count',
-  help: 'Active macros',
-  registers: [register],
-});
 
 // ---------------------------------------------------------------------------
 // Transparency + metadata
@@ -239,10 +223,6 @@ module.exports = {
 
   // Operational
   suspendedTicketsTotal,
-  automationsCount,
-  triggersCount,
-  macrosCount,
-
   // Meta
   sampleSize,
   exporterInfo,

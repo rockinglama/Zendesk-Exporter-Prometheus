@@ -74,7 +74,7 @@ class MockZendeskClient {
 
   async getOperationalMetrics() {
     await this.delay();
-    return { suspendedTicketsTotal: this.v(23, 0.8), automationsCount: this.v(15, 0.2), triggersCount: this.v(28, 0.15), macrosCount: this.v(45, 0.1) };
+    return { suspendedTicketsTotal: this.v(23, 0.8) };
   }
 
   async testConnection() { await this.delay(); logger.info('Mock connection OK'); return true; }

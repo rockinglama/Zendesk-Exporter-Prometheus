@@ -365,11 +365,13 @@ class ZendeskClient {
   // -----------------------------------------------------------------------
 
   async getOperationalMetrics() {
-    const r = { suspendedTicketsTotal: 0, automationsCount: 0, triggersCount: 0, macrosCount: 0 };
-    try { const d = await this.makeRequest('/suspended_tickets.json', { per_page: 1 }); r.suspendedTicketsTotal = d.count || 0; } catch (e) { logger.warn('suspended', e.message); }
-    try { const { automations } = await this.makeRequest('/automations.json'); if (Array.isArray(automations)) r.automationsCount = automations.filter((a) => a.active).length; } catch (e) { logger.warn('automations', e.message); }
-    try { const { triggers } = await this.makeRequest('/triggers.json'); if (Array.isArray(triggers)) r.triggersCount = triggers.filter((t) => t.active).length; } catch (e) { logger.warn('triggers', e.message); }
-    try { const { macros } = await this.makeRequest('/macros.json'); if (Array.isArray(macros)) r.macrosCount = macros.filter((m) => m.active).length; } catch (e) { logger.warn('macros', e.message); }
+    const r = { suspendedTicketsTotal: 0 };
+    try {
+      const d = await this.makeRequest('/suspended_tickets.json', { per_page: 1 });
+      r.suspendedTicketsTotal = d.count || 0;
+    } catch (e) {
+      logger.warn('Failed to get suspended tickets', e.message);
+    }
     return r;
   }
 
