@@ -7,7 +7,7 @@ services:
       - "9091:9091"
     environment:
       - PORT=9091
-      - SCRAPE_INTERVAL_SECONDS=60
+      - SCRAPE_INTERVAL_SECONDS=300
       - ZENDESK_MOCK=true
       - LOG_LEVEL=info
       # For production with API token:
