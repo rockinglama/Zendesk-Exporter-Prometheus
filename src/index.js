@@ -4,7 +4,7 @@ const { register } = require('./metrics');
 const MetricsCollector = require('./collector');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 9091;
 const scrapeInterval = parseInt(process.env.SCRAPE_INTERVAL_SECONDS || '60', 10) * 1000;
 
 // Initialize metrics collector
