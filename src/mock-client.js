@@ -73,11 +73,6 @@ class MockZendeskClient {
     };
   }
 
-  async getOperationalMetrics() {
-    await this.delay();
-    return { suspendedTicketsTotal: this.v(23, 0.8) };
-  }
-
   async testConnection() { await this.delay(); logger.info('Mock connection OK'); return true; }
 }
 

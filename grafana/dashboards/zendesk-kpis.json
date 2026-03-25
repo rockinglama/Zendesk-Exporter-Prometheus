@@ -1,299 +1,1959 @@
 {
-  "annotations": {"list": [{"builtIn": 1, "datasource": {"type": "grafana", "uid": "-- Grafana --"}, "enable": true, "hide": true, "iconColor": "rgba(0, 211, 255, 1)", "name": "Annotations & Alerts", "type": "dashboard"}]},
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
   "editable": true,
   "graphTooltip": 2,
   "links": [],
   "panels": [
-
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}, "id": 1, "title": "📊 Key Metrics", "type": "row"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 500}, {"color": "red", "value": 1000}]}}},
-     "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1}, "id": 10,
-     "options": {"colorMode": "background_gradient", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value_and_name"},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_tickets_total_new + zendesk_tickets_total_open + zendesk_tickets_total_pending + zendesk_tickets_total_hold", "refId": "A"}],
-     "title": "Unsolved", "type": "stat"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}},
-     "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1}, "id": 11,
-     "options": {"colorMode": "background_gradient", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value_and_name"},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_tickets_created_total", "refId": "A"}],
-     "title": "Total Created", "type": "stat"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 10}, {"color": "red", "value": 30}]}}},
-     "gridPos": {"h": 4, "w": 4, "x": 8, "y": 1}, "id": 12,
-     "options": {"colorMode": "background_gradient", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value_and_name"},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_unassigned_tickets_total", "refId": "A"}],
-     "title": "Unassigned", "type": "stat"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 10}, {"color": "red", "value": 30}]}}},
-     "gridPos": {"h": 4, "w": 4, "x": 12, "y": 1}, "id": 13,
-     "options": {"colorMode": "background_gradient", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value_and_name"},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_suspended_tickets_total", "refId": "A"}],
-     "title": "Suspended", "type": "stat"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "description": "((unsolved) - unassigned) / (unsolved) * 100",
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "unit": "percent", "decimals": 1, "min": 0, "max": 100, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 80}, {"color": "green", "value": 95}]}}},
-     "gridPos": {"h": 4, "w": 4, "x": 16, "y": 1}, "id": 14,
-     "options": {"colorMode": "background_gradient", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value_and_name"},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "((zendesk_tickets_total_new + zendesk_tickets_total_open + zendesk_tickets_total_pending + zendesk_tickets_total_hold) - zendesk_unassigned_tickets_total) / (zendesk_tickets_total_new + zendesk_tickets_total_open + zendesk_tickets_total_pending + zendesk_tickets_total_hold) * 100", "refId": "A"}],
-     "title": "Assignment Rate", "type": "stat"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"hideFrom": {"legend": false, "tooltip": false, "viz": false}}}},
-     "gridPos": {"h": 4, "w": 4, "x": 20, "y": 1}, "id": 15,
-     "options": {"displayLabels": ["value"], "legend": {"displayMode": "hidden", "showLegend": false}, "pieType": "donut", "reduceOptions": {"calcs": ["lastNotNull"]}, "tooltip": {"mode": "single"}},
-     "targets": [
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_tickets_total{status=~\"new|open|pending|hold\"}", "legendFormat": "{{status}}", "refId": "A"}
-     ],
-     "title": "Status", "type": "piechart"},
-
-
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5}, "id": 2, "title": "📈 Ticket Flow", "type": "row"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": false, "drawStyle": "line", "fillOpacity": 0, "lineWidth": 2, "showPoints": "never", "spanNulls": false}}},
-     "gridPos": {"h": 7, "w": 24, "x": 0, "y": 6}, "id": 20,
-     "options": {"legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
-     "targets": [
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_tickets_total{status=~\"new|open|pending|hold\"}", "legendFormat": "{{status}}", "refId": "A"}
-     ],
-     "title": "Open Tickets Over Time", "type": "timeseries"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "fixed"}, "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "showPoints": "never"}},
-       "overrides": [
-         {"matcher": {"id": "byName", "options": "Created"}, "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]},
-         {"matcher": {"id": "byName", "options": "Solved"}, "properties": [{"id": "color", "value": {"fixedColor": "green", "mode": "fixed"}}]},
-         {"matcher": {"id": "byName", "options": "Reopened"}, "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]}
-       ]},
-     "gridPos": {"h": 7, "w": 8, "x": 0, "y": 13}, "id": 21,
-     "options": {"legend": {"calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
-     "targets": [
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_tickets_created_last_1d", "legendFormat": "Created", "refId": "A"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_solved_tickets_last_1d", "legendFormat": "Solved", "refId": "B"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_reopened_tickets_last_1d", "legendFormat": "Reopened", "refId": "C"}
-     ],
-     "title": "Last 24h", "type": "timeseries"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "fixed"}, "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "showPoints": "never"}},
-       "overrides": [
-         {"matcher": {"id": "byName", "options": "Created"}, "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]},
-         {"matcher": {"id": "byName", "options": "Solved"}, "properties": [{"id": "color", "value": {"fixedColor": "green", "mode": "fixed"}}]},
-         {"matcher": {"id": "byName", "options": "Reopened"}, "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]}
-       ]},
-     "gridPos": {"h": 7, "w": 8, "x": 8, "y": 13}, "id": 22,
-     "options": {"legend": {"calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
-     "targets": [
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_tickets_created_last_7d", "legendFormat": "Created", "refId": "A"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_solved_tickets_last_7d", "legendFormat": "Solved", "refId": "B"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_reopened_tickets_last_7d", "legendFormat": "Reopened", "refId": "C"}
-     ],
-     "title": "Last 7 Days", "type": "timeseries"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "fixed"}, "custom": {"drawStyle": "line", "fillOpacity": 10, "lineWidth": 2, "showPoints": "never"}},
-       "overrides": [
-         {"matcher": {"id": "byName", "options": "Created"}, "properties": [{"id": "color", "value": {"fixedColor": "red", "mode": "fixed"}}]},
-         {"matcher": {"id": "byName", "options": "Solved"}, "properties": [{"id": "color", "value": {"fixedColor": "green", "mode": "fixed"}}]},
-         {"matcher": {"id": "byName", "options": "Reopened"}, "properties": [{"id": "color", "value": {"fixedColor": "orange", "mode": "fixed"}}]}
-       ]},
-     "gridPos": {"h": 7, "w": 8, "x": 16, "y": 13}, "id": 23,
-     "options": {"legend": {"calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
-     "targets": [
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_tickets_created_last_30d", "legendFormat": "Created", "refId": "A"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_solved_tickets_last_30d", "legendFormat": "Solved", "refId": "B"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_reopened_tickets_last_30d", "legendFormat": "Reopened", "refId": "C"}
-     ],
-     "title": "Last 30 Days", "type": "timeseries"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "description": "Positive (green) = backlog shrinking. Negative (red) = backlog growing.",
-     "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisCenteredZero": true, "drawStyle": "line", "fillOpacity": 15, "lineWidth": 2, "showPoints": "never", "thresholdsStyle": {"mode": "area"}}, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 0}]}}},
-     "gridPos": {"h": 5, "w": 24, "x": 0, "y": 20}, "id": 24,
-     "options": {"legend": {"calcs": ["lastNotNull"], "displayMode": "list", "placement": "right"}, "tooltip": {"mode": "multi"}},
-     "targets": [
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_solved_tickets_last_1d - zendesk_tickets_created_last_1d", "legendFormat": "Burn (1d)", "refId": "A"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_solved_tickets_last_7d - zendesk_tickets_created_last_7d", "legendFormat": "Burn (7d)", "refId": "B"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_solved_tickets_last_30d - zendesk_tickets_created_last_30d", "legendFormat": "Burn (30d)", "refId": "C"}
-     ],
-     "title": "🔥 Burn Rate (solved - created)", "type": "timeseries"},
-
-
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 25}, "id": 3, "title": "⏱️ Performance", "type": "row"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "unit": "s", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 3600}, {"color": "red", "value": 7200}]}},
-       "overrides": []},
-     "gridPos": {"h": 6, "w": 8, "x": 0, "y": 26}, "id": 30,
-     "options": {"displayMode": "gradient", "minVizHeight": 16, "minVizWidth": 0, "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"]}, "showUnfilled": true, "valueMode": "color"},
-     "targets": [
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_first_reply_time_seconds_last_1d", "legendFormat": "1d", "refId": "A"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_first_reply_time_seconds_last_7d", "legendFormat": "7d", "refId": "B"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_first_reply_time_seconds_last_30d", "legendFormat": "30d", "refId": "C"}
-     ],
-     "title": "First Reply Time", "type": "bargauge"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "unit": "s", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 86400}, {"color": "red", "value": 172800}]}}},
-     "gridPos": {"h": 6, "w": 8, "x": 8, "y": 26}, "id": 31,
-     "options": {"displayMode": "gradient", "minVizHeight": 16, "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"]}, "showUnfilled": true, "valueMode": "color"},
-     "targets": [
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_full_resolution_time_seconds_last_1d", "legendFormat": "1d", "refId": "A"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_full_resolution_time_seconds_last_7d", "legendFormat": "7d", "refId": "B"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_full_resolution_time_seconds_last_30d", "legendFormat": "30d", "refId": "C"}
-     ],
-     "title": "Resolution Time", "type": "bargauge"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "unit": "s", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 7200}, {"color": "red", "value": 14400}]}}},
-     "gridPos": {"h": 6, "w": 8, "x": 16, "y": 26}, "id": 32,
-     "options": {"displayMode": "gradient", "minVizHeight": 16, "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"]}, "showUnfilled": true, "valueMode": "color"},
-     "targets": [
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_requester_wait_time_seconds_last_1d", "legendFormat": "1d", "refId": "A"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_requester_wait_time_seconds_last_7d", "legendFormat": "7d", "refId": "B"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_requester_wait_time_seconds_last_30d", "legendFormat": "30d", "refId": "C"}
-     ],
-     "title": "Customer Wait Time", "type": "bargauge"},
-
-
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 32}, "id": 4, "title": "🎯 Quality", "type": "row"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "description": "one_touch / sample_size * 100",
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "unit": "percent", "decimals": 1, "min": 0, "max": 100, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 50}, {"color": "green", "value": 70}]}}},
-     "gridPos": {"h": 5, "w": 6, "x": 0, "y": 33}, "id": 40,
-     "options": {"displayMode": "gradient", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"]}, "showUnfilled": true, "valueMode": "color"},
-     "targets": [
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_one_touch_tickets_last_1d / zendesk_sample_size{window='1d'} * 100", "legendFormat": "1d", "refId": "A"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_one_touch_tickets_last_7d / zendesk_sample_size{window='7d'} * 100", "legendFormat": "7d", "refId": "B"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_one_touch_tickets_last_30d / zendesk_sample_size{window='30d'} * 100", "legendFormat": "30d", "refId": "C"}
-     ],
-     "title": "One-Touch Rate", "type": "bargauge"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "description": "reopened / solved * 100",
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "unit": "percent", "decimals": 1, "min": 0, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 5}, {"color": "red", "value": 15}]}}},
-     "gridPos": {"h": 5, "w": 6, "x": 6, "y": 33}, "id": 41,
-     "options": {"displayMode": "gradient", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"]}, "showUnfilled": true, "valueMode": "color"},
-     "targets": [
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_reopened_tickets_last_1d / zendesk_solved_tickets_last_1d * 100", "legendFormat": "1d", "refId": "A"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_reopened_tickets_last_7d / zendesk_solved_tickets_last_7d * 100", "legendFormat": "7d", "refId": "B"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_reopened_tickets_last_30d / zendesk_solved_tickets_last_30d * 100", "legendFormat": "30d", "refId": "C"}
-     ],
-     "title": "Reopen Rate", "type": "bargauge"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "decimals": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 3}, {"color": "red", "value": 5}]}}},
-     "gridPos": {"h": 5, "w": 6, "x": 12, "y": 33}, "id": 42,
-     "options": {"displayMode": "gradient", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"]}, "showUnfilled": true, "valueMode": "color"},
-     "targets": [
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_replies_per_ticket_avg_last_1d", "legendFormat": "1d", "refId": "A"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_replies_per_ticket_avg_last_7d", "legendFormat": "7d", "refId": "B"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_replies_per_ticket_avg_last_30d", "legendFormat": "30d", "refId": "C"}
-     ],
-     "title": "Replies per Ticket", "type": "bargauge"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "description": "Number of tickets sampled for quality calculations per window",
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}},
-     "gridPos": {"h": 5, "w": 6, "x": 18, "y": 33}, "id": 43,
-     "options": {"displayMode": "gradient", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"]}, "showUnfilled": false, "valueMode": "text"},
-     "targets": [
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_sample_size{window='1d'}", "legendFormat": "1d", "refId": "A"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_sample_size{window='7d'}", "legendFormat": "7d", "refId": "B"},
-       {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_sample_size{window='30d'}", "legendFormat": "30d", "refId": "C"}
-     ],
-     "title": "Sample Size", "type": "bargauge"},
-
-
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 38}, "id": 5, "title": "📊 Distribution", "type": "row"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"hideFrom": {"legend": false, "tooltip": false, "viz": false}}}},
-     "gridPos": {"h": 7, "w": 6, "x": 0, "y": 39}, "id": 50,
-     "options": {"displayLabels": ["name", "value"], "legend": {"displayMode": "hidden"}, "pieType": "donut", "reduceOptions": {"calcs": ["lastNotNull"]}, "sort": "desc", "tooltip": {"mode": "single"}},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_tickets_by_channel", "legendFormat": "{{channel}}", "refId": "A"}],
-     "title": "By Channel (30d)", "type": "piechart"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"hideFrom": {"legend": false, "tooltip": false, "viz": false}}}},
-     "gridPos": {"h": 7, "w": 6, "x": 6, "y": 39}, "id": 51,
-     "options": {"displayLabels": ["name", "value"], "legend": {"displayMode": "hidden"}, "pieType": "donut", "reduceOptions": {"calcs": ["lastNotNull"]}, "sort": "desc", "tooltip": {"mode": "single"}},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_tickets_by_priority", "legendFormat": "{{priority}}", "refId": "A"}],
-     "title": "By Priority", "type": "piechart"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"drawStyle": "bars", "fillOpacity": 80, "showPoints": "never"}}},
-     "gridPos": {"h": 7, "w": 6, "x": 12, "y": 39}, "id": 52,
-     "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_tickets_by_group", "legendFormat": "{{group}}", "refId": "A"}],
-     "title": "By Group", "type": "timeseries"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"drawStyle": "bars", "fillOpacity": 80, "showPoints": "never"}}},
-     "gridPos": {"h": 7, "w": 6, "x": 18, "y": 39}, "id": 53,
-     "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "topk(10, zendesk_tickets_by_tag)", "legendFormat": "{{tag}}", "refId": "A"}],
-     "title": "Top Tags (30d)", "type": "timeseries"},
-
-
-    {"collapsed": false, "gridPos": {"h": 1, "w": 24, "x": 0, "y": 46}, "id": 6, "title": "⚖️ Backlog & Status", "type": "row"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"hideFrom": {"legend": false, "tooltip": false, "viz": false}}}},
-     "gridPos": {"h": 7, "w": 8, "x": 0, "y": 47}, "id": 60,
-     "options": {"displayLabels": ["name", "value"], "legend": {"displayMode": "table", "placement": "right"}, "pieType": "donut", "reduceOptions": {"calcs": ["lastNotNull"]}, "sort": "desc", "tooltip": {"mode": "single"}},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_backlog_age_tickets", "legendFormat": "{{bucket}}", "refId": "A"}],
-     "title": "Backlog Age", "type": "piechart"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"drawStyle": "line", "fillOpacity": 20, "lineWidth": 2, "showPoints": "never", "stacking": {"mode": "normal"}}}},
-     "gridPos": {"h": 7, "w": 10, "x": 8, "y": 47}, "id": 61,
-     "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_backlog_age_tickets", "legendFormat": "{{bucket}}", "refId": "A"}],
-     "title": "Backlog Trend", "type": "timeseries"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}}},
-     "gridPos": {"h": 3, "w": 3, "x": 18, "y": 47}, "id": 62,
-     "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value_and_name"},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_tickets_total_solved", "refId": "A"}],
-     "title": "Solved", "type": "stat"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "blue", "value": null}]}}},
-     "gridPos": {"h": 3, "w": 3, "x": 21, "y": 47}, "id": 63,
-     "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}, "textMode": "value_and_name"},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_tickets_total_closed", "refId": "A"}],
-     "title": "Closed", "type": "stat"},
-
-    {"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-     "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"hideFrom": {"legend": false, "tooltip": false, "viz": false}}}},
-     "gridPos": {"h": 4, "w": 6, "x": 18, "y": 50}, "id": 64,
-     "options": {"displayLabels": ["name", "value"], "legend": {"displayMode": "hidden"}, "pieType": "donut", "reduceOptions": {"calcs": ["lastNotNull"]}, "sort": "desc", "tooltip": {"mode": "single"}},
-     "targets": [{"datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}, "expr": "zendesk_tickets_total", "legendFormat": "{{status}}", "refId": "A"}],
-     "title": "All Status", "type": "piechart"}
-
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "title": "\ud83d\udcca Key Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 500
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "background_gradient",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_tickets_total_new + zendesk_tickets_total_open + zendesk_tickets_total_pending + zendesk_tickets_total_hold",
+          "refId": "A"
+        }
+      ],
+      "title": "Unsolved",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "background_gradient",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_tickets_created_total",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Created",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 30
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "background_gradient",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_unassigned_tickets_total",
+          "refId": "A"
+        }
+      ],
+      "title": "Unassigned",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "((unsolved) - unassigned) / (unsolved) * 100",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "id": 14,
+      "options": {
+        "colorMode": "background_gradient",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "((zendesk_tickets_total_new + zendesk_tickets_total_open + zendesk_tickets_total_pending + zendesk_tickets_total_hold) - zendesk_unassigned_tickets_total) / (zendesk_tickets_total_new + zendesk_tickets_total_open + zendesk_tickets_total_pending + zendesk_tickets_total_hold) * 100",
+          "refId": "A"
+        }
+      ],
+      "title": "Assignment Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "id": 15,
+      "options": {
+        "displayLabels": [
+          "value"
+        ],
+        "legend": {
+          "displayMode": "hidden",
+          "showLegend": false
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_tickets_total{status=~\"new|open|pending|hold\"}",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Status",
+      "type": "piechart"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 2,
+      "title": "\ud83d\udcc8 Ticket Flow",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": false
+          }
+        }
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_tickets_total{status=~\"new|open|pending|hold\"}",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Open Tickets Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Created"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Solved"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Reopened"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 13
+      },
+      "id": 21,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_tickets_created_last_1d",
+          "legendFormat": "Created",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_solved_tickets_last_1d",
+          "legendFormat": "Solved",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_reopened_tickets_last_1d",
+          "legendFormat": "Reopened",
+          "refId": "C"
+        }
+      ],
+      "title": "Last 24h",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Created"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Solved"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Reopened"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 13
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_tickets_created_last_7d",
+          "legendFormat": "Created",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_solved_tickets_last_7d",
+          "legendFormat": "Solved",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_reopened_tickets_last_7d",
+          "legendFormat": "Reopened",
+          "refId": "C"
+        }
+      ],
+      "title": "Last 7 Days",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Created"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Solved"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Reopened"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 13
+      },
+      "id": 23,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_tickets_created_last_30d",
+          "legendFormat": "Created",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_solved_tickets_last_30d",
+          "legendFormat": "Solved",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_reopened_tickets_last_30d",
+          "legendFormat": "Reopened",
+          "refId": "C"
+        }
+      ],
+      "title": "Last 30 Days",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "Positive (green) = backlog shrinking. Negative (red) = backlog growing.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": true,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "thresholdsStyle": {
+              "mode": "area"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 24,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_solved_tickets_last_1d - zendesk_tickets_created_last_1d",
+          "legendFormat": "Burn (1d)",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_solved_tickets_last_7d - zendesk_tickets_created_last_7d",
+          "legendFormat": "Burn (7d)",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_solved_tickets_last_30d - zendesk_tickets_created_last_30d",
+          "legendFormat": "Burn (30d)",
+          "refId": "C"
+        }
+      ],
+      "title": "\ud83d\udd25 Burn Rate (solved - created)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "id": 3,
+      "title": "\u23f1\ufe0f Performance",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 3600
+              },
+              {
+                "color": "red",
+                "value": 7200
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 26
+      },
+      "id": 30,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 16,
+        "minVizWidth": 0,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_first_reply_time_seconds_last_1d",
+          "legendFormat": "1d",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_first_reply_time_seconds_last_7d",
+          "legendFormat": "7d",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_first_reply_time_seconds_last_30d",
+          "legendFormat": "30d",
+          "refId": "C"
+        }
+      ],
+      "title": "First Reply Time",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 86400
+              },
+              {
+                "color": "red",
+                "value": 172800
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 26
+      },
+      "id": 31,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 16,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_full_resolution_time_seconds_last_1d",
+          "legendFormat": "1d",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_full_resolution_time_seconds_last_7d",
+          "legendFormat": "7d",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_full_resolution_time_seconds_last_30d",
+          "legendFormat": "30d",
+          "refId": "C"
+        }
+      ],
+      "title": "Resolution Time",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 7200
+              },
+              {
+                "color": "red",
+                "value": 14400
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 26
+      },
+      "id": 32,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 16,
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_requester_wait_time_seconds_last_1d",
+          "legendFormat": "1d",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_requester_wait_time_seconds_last_7d",
+          "legendFormat": "7d",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_requester_wait_time_seconds_last_30d",
+          "legendFormat": "30d",
+          "refId": "C"
+        }
+      ],
+      "title": "Customer Wait Time",
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "id": 4,
+      "title": "\ud83c\udfaf Quality",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "one_touch / sample_size * 100",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 70
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 33
+      },
+      "id": 40,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_one_touch_tickets_last_1d / zendesk_sample_size{window='1d'} * 100",
+          "legendFormat": "1d",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_one_touch_tickets_last_7d / zendesk_sample_size{window='7d'} * 100",
+          "legendFormat": "7d",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_one_touch_tickets_last_30d / zendesk_sample_size{window='30d'} * 100",
+          "legendFormat": "30d",
+          "refId": "C"
+        }
+      ],
+      "title": "One-Touch Rate",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "reopened / solved * 100",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 15
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 33
+      },
+      "id": 41,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_reopened_tickets_last_1d / zendesk_solved_tickets_last_1d * 100",
+          "legendFormat": "1d",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_reopened_tickets_last_7d / zendesk_solved_tickets_last_7d * 100",
+          "legendFormat": "7d",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_reopened_tickets_last_30d / zendesk_solved_tickets_last_30d * 100",
+          "legendFormat": "30d",
+          "refId": "C"
+        }
+      ],
+      "title": "Reopen Rate",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 3
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 33
+      },
+      "id": 42,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_replies_per_ticket_avg_last_1d",
+          "legendFormat": "1d",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_replies_per_ticket_avg_last_7d",
+          "legendFormat": "7d",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_replies_per_ticket_avg_last_30d",
+          "legendFormat": "30d",
+          "refId": "C"
+        }
+      ],
+      "title": "Replies per Ticket",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "Number of tickets sampled for quality calculations per window",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 33
+      },
+      "id": 43,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showUnfilled": false,
+        "valueMode": "text"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_sample_size{window='1d'}",
+          "legendFormat": "1d",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_sample_size{window='7d'}",
+          "legendFormat": "7d",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_sample_size{window='30d'}",
+          "legendFormat": "30d",
+          "refId": "C"
+        }
+      ],
+      "title": "Sample Size",
+      "type": "bargauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 38
+      },
+      "id": 5,
+      "title": "\ud83d\udcca Distribution",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          }
+        }
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 39
+      },
+      "id": 50,
+      "options": {
+        "displayLabels": [
+          "name",
+          "value"
+        ],
+        "legend": {
+          "displayMode": "hidden"
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "sort": "desc",
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_tickets_by_channel",
+          "legendFormat": "{{channel}}",
+          "refId": "A"
+        }
+      ],
+      "title": "By Channel (30d)",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          }
+        }
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 6,
+        "y": 39
+      },
+      "id": 51,
+      "options": {
+        "displayLabels": [
+          "name",
+          "value"
+        ],
+        "legend": {
+          "displayMode": "hidden"
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "sort": "desc",
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_tickets_by_priority",
+          "legendFormat": "{{priority}}",
+          "refId": "A"
+        }
+      ],
+      "title": "By Priority",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "showPoints": "never"
+          }
+        }
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 12,
+        "y": 39
+      },
+      "id": 52,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_tickets_by_group",
+          "legendFormat": "{{group}}",
+          "refId": "A"
+        }
+      ],
+      "title": "By Group",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "showPoints": "never"
+          }
+        }
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 18,
+        "y": 39
+      },
+      "id": 53,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "topk(10, zendesk_tickets_by_tag)",
+          "legendFormat": "{{tag}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Top Tags (30d)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 46
+      },
+      "id": 6,
+      "title": "\u2696\ufe0f Backlog & Status",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          }
+        }
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 47
+      },
+      "id": 60,
+      "options": {
+        "displayLabels": [
+          "name",
+          "value"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "sort": "desc",
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_backlog_age_tickets",
+          "legendFormat": "{{bucket}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Backlog Age",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 10,
+        "x": 8,
+        "y": 47
+      },
+      "id": 61,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_backlog_age_tickets",
+          "legendFormat": "{{bucket}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Backlog Trend",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 18,
+        "y": 47
+      },
+      "id": 62,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_tickets_total_solved",
+          "refId": "A"
+        }
+      ],
+      "title": "Solved",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 21,
+        "y": 47
+      },
+      "id": 63,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_tickets_total_closed",
+          "refId": "A"
+        }
+      ],
+      "title": "Closed",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 50
+      },
+      "id": 64,
+      "options": {
+        "displayLabels": [
+          "name",
+          "value"
+        ],
+        "legend": {
+          "displayMode": "hidden"
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "sort": "desc",
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "expr": "zendesk_tickets_total",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "All Status",
+      "type": "piechart"
+    }
   ],
   "preload": false,
   "refresh": "5m",
   "schemaVersion": 42,
-  "tags": ["zendesk", "support", "kpi"],
+  "tags": [
+    "zendesk",
+    "support",
+    "kpi"
+  ],
   "templating": {
-    "list": [{
-      "current": {"selected": false, "text": "Prometheus", "value": "PBFA97CFB590B2093"},
-      "hide": 2, "includeAll": false, "multi": false,
-      "name": "DS_PROMETHEUS", "options": [], "query": "prometheus",
-      "refresh": 1, "regex": "", "skipUrlSync": false, "type": "datasource"
-    }]
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "Prometheus",
+          "value": "PBFA97CFB590B2093"
+        },
+        "hide": 2,
+        "includeAll": false,
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
   },
-  "time": {"from": "now-6h", "to": "now"},
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "timepicker": {},
   "timezone": "browser",
   "title": "Zendesk Support KPIs",

@@ -244,15 +244,6 @@ describe('MockZendeskClient', () => {
     });
   });
 
-  describe('getOperationalMetrics', () => {
-    test('should return suspendedTicketsTotal', async () => {
-      const result = await client.getOperationalMetrics();
-      
-      expect(result).toHaveProperty('suspendedTicketsTotal');
-      expect(typeof result.suspendedTicketsTotal).toBe('number');
-      expect(result.suspendedTicketsTotal).toBeGreaterThanOrEqual(0);
-    });
-  });
 
   describe('testConnection', () => {
     test('should return true', async () => {
@@ -272,7 +263,6 @@ describe('MockZendeskClient', () => {
         'getChannelMetrics',
         'getQualityMetrics',
         'getCapacityMetrics',
-        'getOperationalMetrics'
       ];
       
       for (const method of methods) {

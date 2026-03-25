@@ -28,7 +28,6 @@ Prometheus exporter for Zendesk Support metrics. Exports raw ticket KPIs — all
 | `zendesk_tickets_by_group{group}` | Tickets per support group |
 | `zendesk_tickets_by_priority{priority}` | Tickets per priority level |
 | `zendesk_unassigned_tickets_total` | Open tickets without assignee |
-| `zendesk_suspended_tickets_total` | Suspended/spam queue |
 
 ### Windowed Counts (exact, Search Count API)
 
@@ -192,7 +191,6 @@ Per scrape cycle (~220 calls at 300ms throttle ≈ 70s):
 | ~15 | Exact counts (status, priority, backlog, windows) |
 | ~10 | Paginated search for solved tickets (30d) |
 | ≤200 | Individual `/tickets/{id}/metrics` |
-| ~10 | Groups, channels/tags search, suspended, connection test |
 
 ## Zendesk API Endpoints (all GET, read-only)
 
@@ -200,14 +198,12 @@ Per scrape cycle (~220 calls at 300ms throttle ≈ 70s):
 - `/api/v2/search.json` — ticket data for channel/tag/quality analysis
 - `/api/v2/tickets/{id}/metrics.json` — per-ticket response time metrics
 - `/api/v2/groups.json` — support groups
-- `/api/v2/suspended_tickets.json` — suspended queue
 - `/api/v2/users/me.json` — connection test
 
 ## Grafana Dashboard
 
 Pre-provisioned sections:
 
-- **📊 Overview** — status pie, total created, unsolved, unassigned, suspended, assignment rate
 - **📈 Tickets rate by hour** — `rate()` per status over time
 - **📈 Ticket Rates** — created/solved/reopened for 1d, 7d, 30d (color: created=red, solved=green)
 - **🔥 Burn Rate** — solved minus created per window

@@ -31,7 +31,6 @@ describe('Metrics Module', () => {
       expect(metricNames).toContain('zendesk_first_reply_time_seconds_last_7d');
       expect(metricNames).toContain('zendesk_tickets_by_channel');
       expect(metricNames).toContain('zendesk_backlog_age_tickets');
-      expect(metricNames).toContain('zendesk_suspended_tickets_total');
       expect(metricNames).toContain('zendesk_exporter_info');
     });
 
@@ -135,7 +134,6 @@ describe('Metrics Module', () => {
       expect(metrics.ticketsCreatedTotal).toBeInstanceOf(client.Gauge);
       expect(metrics.ticketsByChannel).toBeInstanceOf(client.Gauge);
       expect(metrics.backlogAgeTickets).toBeInstanceOf(client.Gauge);
-      expect(metrics.suspendedTicketsTotal).toBeInstanceOf(client.Gauge);
       expect(metrics.exporterInfo).toBeInstanceOf(client.Gauge);
     });
   });

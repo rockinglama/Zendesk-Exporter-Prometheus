@@ -366,20 +366,6 @@ class ZendeskClient {
     return results;
   }
 
-  // -----------------------------------------------------------------------
-  // Operational
-  // -----------------------------------------------------------------------
-
-  async getOperationalMetrics() {
-    const r = { suspendedTicketsTotal: 0 };
-    try {
-      const d = await this.makeRequest('/suspended_tickets.json', { per_page: 1 });
-      r.suspendedTicketsTotal = d.count || 0;
-    } catch (e) {
-      logger.warn('Failed to get suspended tickets', e.message);
-    }
-    return r;
-  }
 
   async testConnection() {
     try {

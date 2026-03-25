@@ -162,14 +162,9 @@ const unassignedTicketsTotal = new client.Gauge({
 });
 
 // ---------------------------------------------------------------------------
-// Operational
 // ---------------------------------------------------------------------------
 
-const suspendedTicketsTotal = new client.Gauge({
-  name: 'zendesk_suspended_tickets_total',
-  help: 'Tickets in suspended/spam queue',
-  registers: [register],
-});
+
 
 
 
@@ -221,8 +216,6 @@ module.exports = {
   backlogAgeTickets,
   unassignedTicketsTotal,
 
-  // Operational
-  suspendedTicketsTotal,
   // Meta
   sampleSize,
   exporterInfo,

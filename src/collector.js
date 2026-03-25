@@ -51,7 +51,7 @@ class MetricsCollector {
     try {
       logger.info('Starting metrics collection');
 
-      const [rCounts, rCreatedTotal, rWindowed, rGroups, rChannels, rQuality, rCapacity, rOps] =
+      const [rCounts, rCreatedTotal, rWindowed, rGroups, rChannels, rQuality, rCapacity] =
         await Promise.allSettled([
           this.client.getTicketCounts(),
           this.client.getTicketsCreatedTotal(),
@@ -60,7 +60,6 @@ class MetricsCollector {
           this.client.getChannelMetrics(),
           this.client.getQualityMetrics(),
           this.client.getCapacityMetrics(),
-          this.client.getOperationalMetrics(),
         ]);
 
       // All-time counts (labelled + individual gauges)
@@ -126,12 +125,7 @@ class MetricsCollector {
         logger.error('Failed: capacity', rCapacity.reason);
       }
 
-      // Operational
-      if (rOps.status === 'fulfilled') {
-        m.suspendedTicketsTotal.set(rOps.value.suspendedTicketsTotal);
-      } else {
-        logger.error('Failed: operational', rOps.reason);
-      }
+
 
       this.collectionErrors = 0;
       this.lastCollectionTime = new Date();

@@ -125,7 +125,6 @@ describe('MetricsCollector', () => {
       expect(metricNames).toContain('zendesk_tickets_total');
       expect(metricNames).toContain('zendesk_tickets_total_new');
       expect(metricNames).toContain('zendesk_solved_tickets_last_1d');
-      expect(metricNames).toContain('zendesk_suspended_tickets_total');
       
       // Check that metrics have values
       const ticketsTotal = registryMetrics.find(m => m.name === 'zendesk_tickets_total');
@@ -142,7 +141,6 @@ describe('MetricsCollector', () => {
         'getChannelMetrics',
         'getQualityMetrics',
         'getCapacityMetrics',
-        'getOperationalMetrics'
       ];
       
       errorMethods.forEach(method => {
@@ -253,7 +251,6 @@ describe('MetricsCollector', () => {
       expect(metricNames).toContain('zendesk_unassigned_tickets_total');
       
       // Operational metrics
-      expect(metricNames).toContain('zendesk_suspended_tickets_total');
     });
   });
 });
