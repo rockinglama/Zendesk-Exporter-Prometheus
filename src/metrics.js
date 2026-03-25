@@ -62,7 +62,7 @@ const ticketsByGroup = new client.Gauge({
 
 const ticketsByChannel = new client.Gauge({
   name: 'zendesk_tickets_by_channel',
-  help: 'Ticket count by communication channel (from via.channel)',
+  help: 'Ticket count by communication channel (last 30d created, sample max 1000)',
   labelNames: ['channel'],
   registers: [register],
 });
@@ -76,7 +76,7 @@ const ticketsByPriority = new client.Gauge({
 
 const ticketsByTag = new client.Gauge({
   name: 'zendesk_tickets_by_tag',
-  help: 'Ticket count for top 10 tags',
+  help: 'Ticket count for top 10 tags (last 30d created, sample max 1000)',
   labelNames: ['tag'],
   registers: [register],
 });
@@ -87,19 +87,19 @@ const ticketsByTag = new client.Gauge({
 
 const firstReplyTime = new client.Gauge({
   name: 'zendesk_first_reply_time_seconds',
-  help: 'Average first reply time in seconds (business hours)',
+  help: 'Average first reply time in seconds (business hours, last 30d solved tickets, sample max 200)',
   registers: [register],
 });
 
 const fullResolutionTime = new client.Gauge({
   name: 'zendesk_full_resolution_time_seconds',
-  help: 'Average full resolution time in seconds (business hours)',
+  help: 'Average full resolution time in seconds (business hours, last 30d solved tickets, sample max 200)',
   registers: [register],
 });
 
 const requesterWaitTimeSeconds = new client.Gauge({
   name: 'zendesk_requester_wait_time_seconds',
-  help: 'Average total requester wait time in seconds',
+  help: 'Average total requester wait time in seconds (last 30d solved tickets, sample max 200)',
   registers: [register],
 });
 
@@ -115,13 +115,13 @@ const reopenedTicketsTotal = new client.Gauge({
 
 const oneTouchTicketsTotal = new client.Gauge({
   name: 'zendesk_one_touch_tickets_total',
-  help: 'Tickets solved with <= 1 agent reply (Grafana: one_touch / solved * 100 = one-touch rate)',
+  help: 'Tickets solved with <= 1 agent reply (last 30d solved, sample max 200)',
   registers: [register],
 });
 
 const repliesPerTicketAvg = new client.Gauge({
   name: 'zendesk_replies_per_ticket_avg',
-  help: 'Average number of agent replies per ticket (from ticket_metrics API)',
+  help: 'Average number of agent replies per ticket (last 30d solved, sample max 200)',
   registers: [register],
 });
 
