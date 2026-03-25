@@ -2,6 +2,21 @@
 
 Context file for AI agents working on this project.
 
+## ⚠️ Consistency Rule
+
+Every change must be reflected across ALL affected layers:
+
+- **Code** — `src/` (metrics.js, collector.js, zendesk-client.js, mock-client.js)
+- **Tests** — `tests/` (all test suites must pass after changes)
+- **Grafana Dashboard** — `grafana/dashboards/zendesk-kpis.json` (every metric needs a panel)
+- **Mock Client** — `src/mock-client.js` (must mirror all public methods of zendesk-client.js)
+- **README** — `README.md` (metric tables, API endpoints, dashboard sections)
+- **AGENTS.md** — this file (architecture decisions, metric list)
+- **K8s Manifests** — `k8s/` (if env vars or ports change)
+- **.env.example** — (if new config options are added)
+
+**Before committing**: verify no orphaned references exist (metrics without panels, panels referencing deleted metrics, README listing removed features, tests asserting removed behavior).
+
 ## Project Overview
 
 Node.js Prometheus exporter that scrapes Zendesk Support ticket KPIs via REST API v2 and exposes them as Prometheus metrics. Grafana dashboard included.
