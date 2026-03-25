@@ -64,8 +64,13 @@ class MetricsCollector {
           this.client.getOperationalMetrics(),
         ]);
 
-      // All-time counts
+      // All-time counts (labelled + individual gauges)
       this.applyMap(rCounts, m.ticketsTotal, 'ticket counts');
+      if (rCounts.status === 'fulfilled') {
+        Object.entries(rCounts.value).forEach(([status, count]) => {
+          if (m.ticketsByStatus[status]) m.ticketsByStatus[status].set(count);
+        });
+      }
       this.applyScalar(rUnsolved, m.unsolvedTickets, 'unsolved');
       this.applyScalar(rCreatedTotal, m.ticketsCreatedTotal, 'created total');
 

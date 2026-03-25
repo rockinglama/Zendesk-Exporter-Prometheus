@@ -44,6 +44,17 @@ const ticketsTotal = new client.Gauge({
   registers: [register],
 });
 
+// Individual status gauges (easier to use in Grafana without label filters)
+const STATUSES = ['new', 'open', 'pending', 'hold', 'solved', 'closed'];
+const ticketsByStatus = {};
+for (const s of STATUSES) {
+  ticketsByStatus[s] = new client.Gauge({
+    name: `zendesk_tickets_total_${s}`,
+    help: `Current ${s} ticket count (all time)`,
+    registers: [register],
+  });
+}
+
 const unsolvedTickets = new client.Gauge({
   name: 'zendesk_unsolved_tickets_total',
   help: 'Total unsolved tickets (all time)',
@@ -204,6 +215,7 @@ module.exports = {
 
   // All-time
   ticketsTotal,
+  ticketsByStatus,
   unsolvedTickets,
   ticketsCreatedTotal,
 
