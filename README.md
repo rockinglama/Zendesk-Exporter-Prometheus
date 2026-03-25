@@ -139,6 +139,35 @@ npm install
 ZENDESK_MOCK=true npm start
 ```
 
+### Kubernetes
+
+```bash
+# 1. Create secret (API token)
+kubectl create secret generic zendesk-exporter \
+  --from-literal=subdomain=yourcompany \
+  --from-literal=email=agent@company.com \
+  --from-literal=api-token=YOUR_TOKEN
+
+# Or OAuth
+kubectl create secret generic zendesk-exporter \
+  --from-literal=subdomain=yourcompany \
+  --from-literal=oauth-token=YOUR_OAUTH_TOKEN
+
+# 2. Deploy
+kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml
+
+# 3. (Optional) ServiceMonitor for Prometheus Operator
+kubectl apply -f k8s/servicemonitor.yaml
+```
+
+Manifests in `k8s/`:
+- `deployment.yaml` — Deployment with health probes, resource limits, security context
+- `service.yaml` — ClusterIP Service on port 9091
+- `secret.yaml` — Example Secret template (do not commit with real values)
+- `servicemonitor.yaml` — ServiceMonitor for Prometheus Operator (optional)
+
+Resources: 64Mi/50m request, 128Mi/200m limit. Runs as non-root (UID 1001), read-only filesystem.
+
 ## Configuration
 
 | Variable | Required | Default | Description |
@@ -196,6 +225,11 @@ Pre-provisioned sections:
 │   ├── collector.js      # Metric collection orchestrator
 │   ├── metrics.js        # Prometheus metric definitions
 │   └── logger.js         # Winston logger
+├── k8s/
+│   ├── deployment.yaml   # Kubernetes Deployment
+│   ├── service.yaml      # ClusterIP Service
+│   ├── secret.yaml       # Example Secret (don't commit real values)
+│   └── servicemonitor.yaml # Prometheus Operator ServiceMonitor
 ├── grafana/
 │   ├── dashboards/       # Pre-built dashboard JSON
 │   └── provisioning/     # Datasource + dashboard provisioning

@@ -1,0 +1,18 @@
+# For Prometheus Operator (kube-prometheus-stack) — auto-discovers the exporter.
+# Skip this if you use prometheus.io annotations for scrape discovery.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: zendesk-exporter
+  labels:
+    app.kubernetes.io/name: zendesk-exporter
+    app.kubernetes.io/component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: zendesk-exporter
+  endpoints:
+    - port: metrics
+      interval: 300s
+      scrapeTimeout: 60s
+      path: /metrics
